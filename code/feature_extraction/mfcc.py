@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 import os
+import sys
 import json
 import numpy as np
 import librosa
 from moviepy.editor import VideoFileClip
 from datetime import datetime, timezone, timedelta
 from tqdm import tqdm
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from project_paths import HOLOLENS_DIR, PROCESSED_DATA_DIR
 
 # ============================
 # 1. 配置 (适配 3.0 架构)
 # ============================
 # 基础路径
-BASE_DIR = r"E:\smart AR\dataset"  # 视频文件路径保持不变
-DATA_DIR = r"E:\smart AR\AR_Data_Process3.0\data"  # metadata 文件所在目录
-SAVE_DATA_DIR = r"E:\smart AR\AR_Data_Process3.0\data\audio_features"  # 输出目录
+BASE_DIR = str(HOLOLENS_DIR)
+DATA_DIR = str(PROCESSED_DATA_DIR)
+SAVE_DATA_DIR = str(PROCESSED_DATA_DIR / "audio_features")
 os.makedirs(SAVE_DATA_DIR, exist_ok=True)
 
 # 采样配置 (与 strong_gesture.py 严格同步)

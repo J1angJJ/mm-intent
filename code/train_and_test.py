@@ -15,6 +15,7 @@ from sklearn.metrics import classification_report
 from torch.utils.data import DataLoader, Dataset
 
 import baseline_real_scene as base
+from project_paths import MODEL_OUTPUT_ROOT
 
 
 # ============================================================
@@ -23,7 +24,7 @@ import baseline_real_scene as base
 OUTPUT_DIR = Path(
     os.getenv(
         "SMART_AR_MODEL_OUTPUT_DIR",
-        str(base.ROOT_DIR / "Baseline_Model" / "intentionReg" / "improved_real_scene_anchor2_perceiver_io"),
+        str(MODEL_OUTPUT_ROOT / "improved_real_scene_anchor2_perceiver_io"),
     )
 )
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

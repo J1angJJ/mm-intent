@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import numpy as np
 import torch
 from transformers import CLIPImageProcessor, CLIPVisionModel
@@ -9,14 +10,22 @@ import mediapipe as mp
 import json
 from tqdm import tqdm
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from project_paths import CLIP_MODEL_NAME_OR_PATH, FISHEYE_DIR, PROCESSED_DATA_DIR, configure_hf_cache
+
+configure_hf_cache()
 
 # ==================== 1. 路径与参数配置 ====================
-BASE_DIR = r"E:\smart AR\dataset"
-INPUT_DATA_DIR = r"E:\smart AR\AR_Data_Process3.0\data" 
-OUTPUT_DIR = r"E:\smart AR\AR_Data_Process3.0\data"
+BASE_DIR = str(FISHEYE_DIR)
+INPUT_DATA_DIR = str(PROCESSED_DATA_DIR)
+OUTPUT_DIR = str(PROCESSED_DATA_DIR / "strong_gesture_features")
+METADATA_OUTPUT_DIR = str(PROCESSED_DATA_DIR)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(METADATA_OUTPUT_DIR, exist_ok=True)
 
-CLIP_MODEL_PATH = r"E:\smart AR\AR_Data_Process3.0\models\clip_teacher_model"
+CLIP_MODEL_PATH = CLIP_MODEL_NAME_OR_PATH
 
 # 序列采样配置
 SEQ_LEN = 10                 # 提取 10 帧
@@ -82,8 +91,10 @@ hands = mp_hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_co
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f"🚀 [设备] 当前使用: {device}")
 
-clip_processor = CLIPImageProcessor.from_pretrained(CLIP_MODEL_PATH, local_files_only=True)
-clip_vision = CLIPVisionModel.from_pretrained(CLIP_MODEL_PATH, local_files_only=True).to(device).eval()
+clip_source = CLIP_MODEL_PATH if Path(CLIP_MODEL_PATH).exists() else "openai/clip-vit-base-patch32"
+clip_local_only = Path(CLIP_MODEL_PATH).exists()
+clip_processor = CLIPImageProcessor.from_pretrained(clip_source, local_files_only=clip_local_only)
+clip_vision = CLIPVisionModel.from_pretrained(clip_source, local_files_only=clip_local_only).to(device).eval()
 
 # ==================== 3. 核心处理函数 ====================
 
@@ -233,10 +244,10 @@ if __name__ == "__main__":
 
             # 2. 保存 Metadata (格式与特征文件一致，仅去掉 features)
             meta_npy = {k: v for k, v in final_npy.items() if k != "features"}
-            np.save(os.path.join(OUTPUT_DIR, f"metadata_strong_gesture_{mp4_base}.npy"), meta_npy)
+            np.save(os.path.join(METADATA_OUTPUT_DIR, f"metadata_strong_gesture_{mp4_base}.npy"), meta_npy)
 
             # 3. 保存 Debug JSON
-            with open(os.path.join(OUTPUT_DIR, f"debug_strong_gesture_{mp4_base}.json"), 'w') as f:
+            with open(os.path.join(METADATA_OUTPUT_DIR, f"debug_strong_gesture_{mp4_base}.json"), 'w') as f:
                 json.dump(debug_log, f, indent=4)
             
             print(f"    ✅ 保存完成！有效片段: {len(valid_feats)}/{len(ts_list)}")

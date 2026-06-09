@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import json
 import numpy as np
 import librosa
@@ -8,18 +9,29 @@ from moviepy.editor import VideoFileClip
 from sentence_transformers import SentenceTransformer
 from pypinyin import pinyin, Style
 from datetime import datetime, timezone
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from project_paths import (
+    HOLOLENS_DIR,
+    PROCESSED_DATA_DIR,
+    SENTENCE_MODEL_NAME_OR_PATH,
+    configure_hf_cache,
+)
+
+configure_hf_cache()
 
 # ============================
 # 1. 路径配置
 # ============================
-HOLOLENS_VIDEO_DIR = r"E:\smart AR\dataset"
+HOLOLENS_VIDEO_DIR = str(HOLOLENS_DIR)
 # 这里指向包含 metadata_strong_gesture_...npy 的目录
-DATA_DIR = r"E:\smart AR\AR_Data_Process3.0\data"
+DATA_DIR = str(PROCESSED_DATA_DIR)
 
 TEXT_OUT_DIR = os.path.join(DATA_DIR, "text_features")
 os.makedirs(TEXT_OUT_DIR, exist_ok=True)
 
-LOCAL_SENTENCE_MODEL = r"E:\smart AR\AR_Data_Process3.0\models\all-MiniLM-L6-v2"
+LOCAL_SENTENCE_MODEL = SENTENCE_MODEL_NAME_OR_PATH
 
 # ============================
 # 2. 核心参数
@@ -175,7 +187,8 @@ if __name__ == "__main__":
 
     print("正在加载 Whisper (small) 与 SentenceTransformer 模型...")
     whisper_model = whisper.load_model("small")
-    st_model = SentenceTransformer(LOCAL_SENTENCE_MODEL)
+    st_source = LOCAL_SENTENCE_MODEL if Path(LOCAL_SENTENCE_MODEL).exists() else "sentence-transformers/all-MiniLM-L6-v2"
+    st_model = SentenceTransformer(st_source)
 
     # 遍历 VIDEO_NAMES 中的每个视频
     for video_name in VIDEO_NAMES:

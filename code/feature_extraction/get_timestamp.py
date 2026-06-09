@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import numpy as np
 import webrtcvad
 import contextlib
@@ -8,12 +9,16 @@ import re
 import json
 from moviepy import editor as mp_edit
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from project_paths import HOLOLENS_DIR, PROCESSED_DATA_DIR
 
 # ============================
 # 1. 路径配置
 # ============================
-VIDEO_DIR = r"E:\smart AR\dataset"
-SAVE_DIR = r"E:\smart AR\AR_Data_Process3.0\data"
+VIDEO_DIR = str(HOLOLENS_DIR)
+SAVE_DIR = str(PROCESSED_DATA_DIR)
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 VIDEO_LABELS = {

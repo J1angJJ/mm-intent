@@ -1,23 +1,28 @@
 #!/usr/bin/env python3
 import os
+import sys
 import json
 import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
 from scipy.spatial.transform import Rotation as R
 from tqdm import tqdm
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+from project_paths import DATASET_DIR, PROCESSED_DATA_DIR
 
 # ============================
 # 1. 配置 (适配 3.0 架构)
 # ============================
-BASE_DIR = r"E:\smart AR\dataset"
+BASE_DIR = str(DATASET_DIR)
 IMU_PATH = os.path.join(BASE_DIR, "imu.csv") 
 
 # 这里的路径存放 strong_gesture.py 生成的 metadata_...npy
-INPUT_META_DIR = r"E:\smart AR\AR_Data_Process3.0\data"
+INPUT_META_DIR = str(PROCESSED_DATA_DIR)
 
 # 这里的路径存放本脚本生成的 imu_features_...npy 和 .json
-OUTPUT_IMU_DIR = r"E:\smart AR\AR_Data_Process3.0\data\imu_features"
+OUTPUT_IMU_DIR = str(PROCESSED_DATA_DIR / "imu_features")
 os.makedirs(OUTPUT_IMU_DIR, exist_ok=True)
 
 # 采样配置 (必须与 strong_gesture.py 严格一致)

@@ -14,16 +14,20 @@ import torch
 from PIL import Image
 from transformers import ViTImageProcessor, ViTModel
 
-os.environ.setdefault("HF_HOME", r"E:\smart AR\.hf_cache")
-os.environ.setdefault("HF_HUB_CACHE", r"E:\smart AR\.hf_cache\hub")
-os.environ.setdefault("TRANSFORMERS_CACHE", r"E:\smart AR\.hf_cache\transformers")
-os.makedirs(os.environ["HF_HUB_CACHE"], exist_ok=True)
-os.makedirs(os.environ["TRANSFORMERS_CACHE"], exist_ok=True)
+from project_paths import (
+    DATASET_DIR,
+    FISHEYE_DIR,
+    HF_CACHE_DIR,
+    VIT_MODEL_NAME_OR_PATH,
+    configure_hf_cache,
+)
 
-ROOT_DIR = Path(r"E:\smart AR")
-DATASET_VIDEO_DIR = ROOT_DIR / "dataset"
-LOCAL_VIT_PATH = ROOT_DIR / "鱼眼完整模型" / "vit-base-patch16-224"
-REAL_SCENE_CACHE_DIR = ROOT_DIR / "dataset" / "scene_cache_real_vit"
+configure_hf_cache()
+
+ROOT_DIR = DATASET_DIR.parent
+DATASET_VIDEO_DIR = FISHEYE_DIR
+LOCAL_VIT_PATH = Path(VIT_MODEL_NAME_OR_PATH)
+REAL_SCENE_CACHE_DIR = DATASET_DIR / "scene_cache_real_vit"
 SCENE_FEAT_DIM = 768
 
 AVI_TO_MP4_MAP = {
@@ -77,8 +81,10 @@ def get_scene_backbone() -> Tuple[ViTImageProcessor, ViTModel]:
     global _PROCESSOR, _MODEL
     if _PROCESSOR is not None and _MODEL is not None:
         return _PROCESSOR, _MODEL
-    _PROCESSOR = ViTImageProcessor.from_pretrained(str(LOCAL_VIT_PATH), local_files_only=True)
-    _MODEL = ViTModel.from_pretrained(str(LOCAL_VIT_PATH), local_files_only=True, add_pooling_layer=False)
+    model_source = str(LOCAL_VIT_PATH) if LOCAL_VIT_PATH.exists() else "google/vit-base-patch16-224-in21k"
+    local_only = LOCAL_VIT_PATH.exists()
+    _PROCESSOR = ViTImageProcessor.from_pretrained(model_source, local_files_only=local_only)
+    _MODEL = ViTModel.from_pretrained(model_source, local_files_only=local_only, add_pooling_layer=False)
     _MODEL.eval()
     _MODEL.to("cpu")
     return _PROCESSOR, _MODEL
@@ -105,7 +111,10 @@ def avi_start_utc_from_name(avi_name: str) -> datetime:
 
 def resolve_avi_path(video_name: str) -> Path:
     avi_name = MP4_TO_AVI_MAP[video_name]
-    return DATASET_VIDEO_DIR / avi_name
+    fisheye_path = DATASET_VIDEO_DIR / avi_name
+    if fisheye_path.exists():
+        return fisheye_path
+    return DATASET_DIR / avi_name
 
 
 def read_real_scene_frame(video_name: str, timestamp_value: str) -> Optional[Image.Image]:

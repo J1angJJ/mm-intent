@@ -30,42 +30,39 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.utils.class_weight import compute_class_weight
 from torch.utils.data import DataLoader, Dataset
 
-os.environ.setdefault("HF_HOME", r"E:\smart AR\.hf_cache")
-os.environ.setdefault("HF_HUB_CACHE", r"E:\smart AR\.hf_cache\hub")
-os.makedirs(os.environ["HF_HUB_CACHE"], exist_ok=True)
-
-from transformers import ViTImageProcessor, ViTModel
+from project_paths import (
+    MODEL_OUTPUT_ROOT,
+    PROCESSED_DATA_DIR,
+    PROJECT_ROOT,
+    VIT_MODEL_NAME_OR_PATH,
+    configure_hf_cache,
+)
 from real_scene_utils import REAL_SCENE_CACHE_DIR, RealSceneFeatureCache, load_real_scene_features
+from transformers import ViTImageProcessor, ViTModel
+
+configure_hf_cache()
 
 
 # ============================================================
 # 1. Config
 # ============================================================
-ROOT_DIR = Path(r"E:\smart AR")
-PROCESSED_DATA_DIR = ROOT_DIR / "AR_Data_Process3.0" / "data"
+ROOT_DIR = PROJECT_ROOT
 MODEL_OUTPUT_DIR = Path(
     os.getenv(
         "SMART_AR_MODEL_OUTPUT_DIR",
-        str(ROOT_DIR / "Baseline_Model" / "intentionReg" / "baseline_real_scene_perceiver_io"),
+        str(MODEL_OUTPUT_ROOT / "baseline_real_scene_perceiver_io"),
     )
 )
 MODEL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-HF_CACHE_DIR = ROOT_DIR / ".hf_cache"
-HF_TRANSFORMERS_CACHE_DIR = HF_CACHE_DIR / "transformers"
-HF_HUB_CACHE_DIR = HF_CACHE_DIR / "hub"
-HF_TRANSFORMERS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-HF_HUB_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-os.environ.setdefault("HF_HOME", str(HF_CACHE_DIR))
-os.environ.setdefault("HF_HUB_CACHE", str(HF_HUB_CACHE_DIR))
 
 STRONG_GESTURE_DIR = PROCESSED_DATA_DIR / "strong_gesture_features"
 AUDIO_FEAT_DIR = PROCESSED_DATA_DIR / "audio_features"
 TEXT_FEAT_DIR = PROCESSED_DATA_DIR / "text_features"
 IMU_FEAT_DIR = PROCESSED_DATA_DIR / "imu_features"
-LOCAL_VIT_PATH = ROOT_DIR / "鱼眼完整模型" / "vit-base-patch16-224"
+LOCAL_VIT_PATH = Path(VIT_MODEL_NAME_OR_PATH)
 SCENE_DIRS = {
-    "museum": ROOT_DIR / "鱼眼完整模型" / "museum",
-    "office": ROOT_DIR / "鱼眼完整模型" / "office",
+    "museum": ROOT_DIR / "scene_images" / "museum",
+    "office": ROOT_DIR / "scene_images" / "office",
 }
 SCENE_CACHE_DIR = REAL_SCENE_CACHE_DIR
 
@@ -227,7 +224,7 @@ if missing_scene_assignments:
     raise RuntimeError(f"Missing scene assignments for videos: {missing_scene_assignments}")
 for scene_name, image_paths in SCENE_IMAGE_PATHS.items():
     if not image_paths:
-        raise RuntimeError(f"No scene images found under: {SCENE_DIRS[scene_name]}")
+        print(f"[warn] no static scene images found under: {SCENE_DIRS[scene_name]}")
 
 
 # ============================================================
@@ -290,17 +287,16 @@ def get_scene_backbone() -> Tuple[ViTImageProcessor, ViTModel]:
     if _SCENE_PROCESSOR is not None and _SCENE_MODEL is not None:
         return _SCENE_PROCESSOR, _SCENE_MODEL
 
-    if not LOCAL_VIT_PATH.exists():
-        raise FileNotFoundError(f"Local ViT path does not exist: {LOCAL_VIT_PATH}")
-
-    print(f"[scene] load local ViT from {LOCAL_VIT_PATH}")
+    model_source = str(LOCAL_VIT_PATH) if LOCAL_VIT_PATH.exists() else "google/vit-base-patch16-224-in21k"
+    local_only = LOCAL_VIT_PATH.exists()
+    print(f"[scene] load ViT from {model_source}")
     _SCENE_PROCESSOR = ViTImageProcessor.from_pretrained(
-        str(LOCAL_VIT_PATH),
-        local_files_only=True,
+        model_source,
+        local_files_only=local_only,
     )
     _SCENE_MODEL = ViTModel.from_pretrained(
-        str(LOCAL_VIT_PATH),
-        local_files_only=True,
+        model_source,
+        local_files_only=local_only,
         add_pooling_layer=False,
     )
     _SCENE_MODEL.eval()
