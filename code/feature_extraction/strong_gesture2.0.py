@@ -87,9 +87,16 @@ AVI_TO_MP4_MAP = {
 try:
     mp_hands = mp.solutions.hands
 except AttributeError:
-    from mediapipe.python.solutions import hands as mp_hands
+    try:
+        from mediapipe.python.solutions import hands as mp_hands
+    except ModuleNotFoundError:
+        mp_hands = None
 
-hands = mp_hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.3)
+if mp_hands is None:
+    print("⚠️ [MediaPipe] 当前版本不提供 legacy Hands API，将使用整帧 CLIP 特征作为手势 fallback")
+    hands = None
+else:
+    hands = mp_hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.3)
 
 # 如果你只有单显卡，请尝试改为 cuda:0
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -104,6 +111,9 @@ clip_vision = CLIPVisionModel.from_pretrained(clip_source, local_files_only=clip
 
 def crop_hand(img_pil):
     """ MediaPipe 裁剪逻辑 (保持 40% Padding) """
+    if hands is None:
+        return img_pil.resize((224, 224), Image.LANCZOS)
+
     img_np = np.array(img_pil)
     h, w = img_np.shape[:2]
     img_rgb = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
