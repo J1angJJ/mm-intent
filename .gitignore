@@ -1,0 +1,97 @@
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100/
+.Trashes/
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Editor and IDE state
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Local private notes, assignments, and records
+private/
+private/**
+*.private.*
+*.secret
+*.local
+.env
+.env.*
+!.env.example
+!.env.template
+secrets/
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+.tmp/
+.cache/
+
+# Raw video folders copied to the server separately with scp
+dataset/fisheye/
+dataset/HoloLens/
+
+# ML generated features, caches, and model outputs
+dataset/**/data/
+dataset/**/*_cache*/
+dataset/**/*features*.npy
+dataset/**/*metadata*.npy
+dataset/**/*segments*.json
+dataset/**/*debug*.json
+dataset/**/*.wav
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.pickle
+*.joblib
+metrics.json
+classification_report.txt
+confusion_matrix*.png
+loss_curve*.png
+Baseline_Model/
+outputs/
+runs/
+checkpoints/
+models/
+
+# LLM / agent local state and generated scratch space
+.codex/
+.claude/
+.cursor/
+.continue/
+.aider*
+.mcp/
+memory.local/
+scratch/
+transcripts/
+sessions/
+
+# Archives and local exports
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+exports/
