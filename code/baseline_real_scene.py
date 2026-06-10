@@ -511,6 +511,7 @@ def load_multimodal_data(
     sample_scene_names: List[str] = []
 
     for video_name in video_names:
+        print(f"[load] {video_name}", flush=True)
         payload = load_aligned_video(video_name, scene_cache)
         if payload is None:
             continue

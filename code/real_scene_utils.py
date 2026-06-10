@@ -75,6 +75,16 @@ MP4_TO_AVI_MAP = {mp4_name: avi_name for avi_name, mp4_name in AVI_TO_MP4_MAP.it
 
 _PROCESSOR: Optional[ViTImageProcessor] = None
 _MODEL: Optional[ViTModel] = None
+_DEVICE: Optional[torch.device] = None
+
+
+def get_scene_device() -> torch.device:
+    global _DEVICE
+    if _DEVICE is not None:
+        return _DEVICE
+    requested = os.getenv("REAL_SCENE_DEVICE", "cuda" if torch.cuda.is_available() else "cpu")
+    _DEVICE = torch.device(requested)
+    return _DEVICE
 
 
 def get_scene_backbone() -> Tuple[ViTImageProcessor, ViTModel]:
@@ -86,14 +96,18 @@ def get_scene_backbone() -> Tuple[ViTImageProcessor, ViTModel]:
     _PROCESSOR = ViTImageProcessor.from_pretrained(model_source, local_files_only=local_only)
     _MODEL = ViTModel.from_pretrained(model_source, local_files_only=local_only, add_pooling_layer=False)
     _MODEL.eval()
-    _MODEL.to("cpu")
+    _MODEL.to(get_scene_device())
     return _PROCESSOR, _MODEL
 
 
 @torch.no_grad()
 def encode_scene_pil_image(image: Image.Image) -> np.ndarray:
     processor, model = get_scene_backbone()
-    inputs = processor(images=image.convert("RGB"), return_tensors="pt")
+    device = get_scene_device()
+    inputs = {
+        key: value.to(device)
+        for key, value in processor(images=image.convert("RGB"), return_tensors="pt").items()
+    }
     outputs = model(**inputs)
     embedding = outputs.last_hidden_state[:, 0, :]
     return embedding.squeeze(0).cpu().numpy().astype(np.float32)
