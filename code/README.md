@@ -6,6 +6,18 @@
 - `train_and_test.py`
   - 基于锚点主干与残差辅助的多模态用户交互意图模型代码
   - 将这个脚本拆分成train.py和test.py，将特征提取代码整合进train.py和test.py代码，调试，实现端到端输入输出；重构代码后，运行train.py脚本进行模型训练，运行test.py脚本进行测试。
+- `train.py`
+  - 端到端训练入口封装：先检查五类缓存特征是否齐全，再分发到 baseline 或 improved 训练脚本。
+  - 可通过 `--extract-features` 在特征缺失时依次调用特征提取脚本。
+  - 可通过 `--missing-modalities` 和 `--noise-modality --noise-level` 启动模态缺失/噪声实验。
+- `test.py`
+  - 测试结果入口封装：读取训练输出目录中的 `metrics.json` 和分类报告，打印关键测试指标。
+- `run_missing_experiments.py`
+  - 生成或执行单模态缺失、双模态缺失实验命令。
+- `run_noise_experiments.py`
+  - 生成或执行单模态 20%、40%、60% 噪声实验命令。
+- `collect_experiment_results.py`
+  - 汇总多个实验输出目录中的 `metrics.json`，生成 CSV 指标表。
 
 模型训练完成会保存成以下文件：
 - `*.pt`：训练完成后的模型权重文件

@@ -99,6 +99,14 @@ MODALITY_DISPLAY_NAMES = {
     "text": "Text",
     "scene": "Scene",
 }
+MISSING_MODALITIES = tuple(
+    item.strip()
+    for item in os.getenv("SMART_AR_MISSING_MODALITIES", "").split(",")
+    if item.strip()
+)
+NOISE_MODALITY = os.getenv("SMART_AR_NOISE_MODALITY", "").strip()
+NOISE_LEVEL = float(os.getenv("SMART_AR_NOISE_LEVEL", "0.0"))
+NOISE_SEED = int(os.getenv("SMART_AR_NOISE_SEED", str(RANDOM_SEED)))
 
 INTENT_NAMES = {
     0: "menu",
@@ -418,6 +426,40 @@ def normalize_audio_modality(audio_samples: np.ndarray) -> np.ndarray:
     return np.stack(normalized).astype(np.float32)
 
 
+def _stable_noise_seed(video_name: str, modality: str) -> int:
+    digest = hashlib.md5(f"{NOISE_SEED}|{video_name}|{modality}".encode("utf-8")).hexdigest()
+    return int(digest[:8], 16)
+
+
+def apply_modality_perturbations(
+    video_name: str,
+    features: Dict[str, np.ndarray],
+) -> Dict[str, np.ndarray]:
+    """Apply experiment-time modality missing/noise settings from environment variables."""
+    missing = set(MISSING_MODALITIES)
+    unknown_missing = missing - set(MODALITY_KEYS)
+    if unknown_missing:
+        raise ValueError(f"Unknown missing modalities: {sorted(unknown_missing)}")
+    if NOISE_MODALITY and NOISE_MODALITY not in MODALITY_KEYS:
+        raise ValueError(f"Unknown noise modality: {NOISE_MODALITY}")
+
+    perturbed = {key: value.astype(np.float32, copy=True) for key, value in features.items()}
+    for modality in missing:
+        perturbed[modality] = np.zeros_like(perturbed[modality], dtype=np.float32)
+
+    if NOISE_MODALITY and NOISE_LEVEL > 0:
+        target = perturbed[NOISE_MODALITY]
+        if target.size:
+            rng = np.random.default_rng(_stable_noise_seed(video_name, NOISE_MODALITY))
+            scale = float(np.std(target))
+            if scale <= 1e-6:
+                scale = 1.0
+            noise = rng.normal(0.0, scale * NOISE_LEVEL, size=target.shape).astype(np.float32)
+            perturbed[NOISE_MODALITY] = (target + noise).astype(np.float32)
+
+    return perturbed
+
+
 def get_feature_paths(video_name: str) -> Dict[str, Path]:
     name_no_ext = Path(video_name).stem
     return {
@@ -486,12 +528,17 @@ def load_aligned_video(
     labels = labels[valid_mask].astype(np.int64)
     approx_timestamps = approx_timestamps[valid_mask]
     scene_feat, scene_record = load_real_scene_features(video_name, approx_timestamps, scene_cache)
-    return {
+    features = {
         "imu": imu_feat[valid_mask],
         "gesture": gesture_feat[valid_mask],
         "audio": audio_feat[valid_mask],
         "text": text_feat[valid_mask],
         "scene": scene_feat,
+    }
+    features = apply_modality_perturbations(video_name, features)
+
+    return {
+        **features,
         "labels": labels,
         "scene_targets": scene_targets[valid_mask],
         "scene_type": scene_type,
