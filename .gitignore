@@ -41,6 +41,7 @@ env/
 
 # Logs and temporary files
 *.log
+logs_*.txt
 logs/
 tmp/
 temp/
