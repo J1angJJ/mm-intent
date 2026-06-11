@@ -87,7 +87,9 @@ memory.local/
 scratch/
 transcripts/
 sessions/
-vla_world_model_lab/
+
+# VLA/world-model generated artifacts. Keep scripts tracked, outputs local/transferred.
+vla_world_model_lab/artifacts/
 
 # Archives and local exports
 *.zip
