@@ -87,6 +87,7 @@ memory.local/
 scratch/
 transcripts/
 sessions/
+vla_world_model_lab/
 
 # Archives and local exports
 *.zip
