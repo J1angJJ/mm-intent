@@ -70,6 +70,14 @@ def build_env(args: argparse.Namespace) -> dict[str, str]:
     if args.noise_modality:
         env["SMART_AR_NOISE_MODALITY"] = args.noise_modality
         env["SMART_AR_NOISE_LEVEL"] = str(args.noise_level)
+    if args.consistency_weight is not None:
+        env["IMPROVED_REAL_SCENE_A2_CONSISTENCY_WEIGHT"] = str(args.consistency_weight)
+    if args.consistency_mask_prob is not None:
+        env["IMPROVED_REAL_SCENE_A2_CONSISTENCY_MASK_PROB"] = str(args.consistency_mask_prob)
+    if args.consistency_noise_std is not None:
+        env["IMPROVED_REAL_SCENE_A2_CONSISTENCY_NOISE_STD"] = str(args.consistency_noise_std)
+    if args.consistency_temperature is not None:
+        env["IMPROVED_REAL_SCENE_A2_CONSISTENCY_TEMPERATURE"] = str(args.consistency_temperature)
     if args.skip_test_eval:
         env["SMART_AR_SKIP_TEST_EVAL"] = "1"
     return env
@@ -98,6 +106,10 @@ def main() -> None:
     parser.add_argument("--missing-modalities", nargs="*", default=[])
     parser.add_argument("--noise-modality", choices=("imu", "gesture", "audio", "text", "scene"))
     parser.add_argument("--noise-level", type=float, default=0.0)
+    parser.add_argument("--consistency-weight", type=float)
+    parser.add_argument("--consistency-mask-prob", type=float)
+    parser.add_argument("--consistency-noise-std", type=float)
+    parser.add_argument("--consistency-temperature", type=float)
     parser.add_argument("--skip-test-eval", action="store_true")
     args = parser.parse_args()
 

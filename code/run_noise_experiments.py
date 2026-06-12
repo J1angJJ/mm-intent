@@ -13,7 +13,7 @@ NOISE_LEVELS = (0.2, 0.4, 0.6)
 
 def build_command(args: argparse.Namespace, modality: str, level: float) -> list[str]:
     percent = int(round(level * 100))
-    output_dir = MODEL_OUTPUT_ROOT / "noise_experiments" / args.model / f"{modality}_noise_{percent}"
+    output_dir = MODEL_OUTPUT_ROOT / "noise_experiments" / args.output_model_name / f"{modality}_noise_{percent}"
     command = [
         sys.executable,
         "code/train.py",
@@ -32,20 +32,38 @@ def build_command(args: argparse.Namespace, modality: str, level: float) -> list
     ]
     if args.skip_test_eval:
         command.append("--skip-test-eval")
+    if args.consistency_weight is not None:
+        command.extend(["--consistency-weight", str(args.consistency_weight)])
+    if args.consistency_mask_prob is not None:
+        command.extend(["--consistency-mask-prob", str(args.consistency_mask_prob)])
+    if args.consistency_noise_std is not None:
+        command.extend(["--consistency-noise-std", str(args.consistency_noise_std)])
+    if args.consistency_temperature is not None:
+        command.extend(["--consistency-temperature", str(args.consistency_temperature)])
     return command
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run single-modality noise experiments.")
     parser.add_argument("--model", choices=("baseline", "improved"), default="improved")
+    parser.add_argument("--output-model-name", default=None)
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--patience", type=int, default=5)
     parser.add_argument("--skip-test-eval", action="store_true")
+    parser.add_argument("--consistency-weight", type=float)
+    parser.add_argument("--consistency-mask-prob", type=float)
+    parser.add_argument("--consistency-noise-std", type=float)
+    parser.add_argument("--consistency-temperature", type=float)
     parser.add_argument("--execute", action="store_true", help="Actually run commands. Default only prints them.")
     args = parser.parse_args()
+    if args.output_model_name is None:
+        args.output_model_name = args.model
 
     jobs = [(modality, level) for modality in MODALITIES for level in NOISE_LEVELS]
-    print(f"[noise] model={args.model} experiments={len(jobs)} execute={args.execute}")
+    print(
+        f"[noise] model={args.model} output_model_name={args.output_model_name} "
+        f"experiments={len(jobs)} execute={args.execute}"
+    )
     for index, (modality, level) in enumerate(jobs, start=1):
         command = build_command(args, modality, level)
         print(f"[{index:02d}/{len(jobs):02d}]", " ".join(command), flush=True)

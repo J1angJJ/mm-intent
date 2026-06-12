@@ -11,6 +11,7 @@ from typing import Dict, Iterable, List, Tuple
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from sklearn.metrics import classification_report
 from torch.utils.data import DataLoader, Dataset
 
@@ -56,6 +57,12 @@ INTENT_REFINE_SCALE = float(os.getenv("IMPROVED_REAL_SCENE_A2_INTENT_REFINE_SCAL
 GESTURE_LOGIT_BLEND = float(os.getenv("IMPROVED_REAL_SCENE_A2_GESTURE_LOGIT_BLEND", "0.30"))
 SELECTION_INTENT_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_SELECTION_INTENT_WEIGHT", "0.35"))
 SELECTION_SCENE_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_SELECTION_SCENE_WEIGHT", "0.05"))
+CONSISTENCY_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_CONSISTENCY_WEIGHT", "0.0"))
+CONSISTENCY_MASK_PROB = float(os.getenv("IMPROVED_REAL_SCENE_A2_CONSISTENCY_MASK_PROB", "0.25"))
+CONSISTENCY_NOISE_STD = float(os.getenv("IMPROVED_REAL_SCENE_A2_CONSISTENCY_NOISE_STD", "0.05"))
+CONSISTENCY_TEMPERATURE = float(os.getenv("IMPROVED_REAL_SCENE_A2_CONSISTENCY_TEMPERATURE", "2.0"))
+CONSISTENCY_INTENT_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_CONSISTENCY_INTENT_WEIGHT", "0.35"))
+CONSISTENCY_SCENE_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_CONSISTENCY_SCENE_WEIGHT", "0.15"))
 
 MODALITY_KEYS = ("imu", "gesture", "audio", "text", "scene")
 MODALITY_DISPLAY_NAMES = base.MODALITY_DISPLAY_NAMES
@@ -402,6 +409,58 @@ def compute_loss(
     }
 
 
+def perturb_batch_for_consistency(
+    batch_imu: torch.Tensor,
+    batch_gesture: torch.Tensor,
+    batch_audio: torch.Tensor,
+    batch_text: torch.Tensor,
+    batch_scene: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    perturbed = []
+    for tensor in (batch_imu, batch_gesture, batch_audio, batch_text, batch_scene):
+        noisy = tensor
+        if CONSISTENCY_NOISE_STD > 0.0:
+            reduce_dims = tuple(range(1, tensor.ndim))
+            scale = tensor.detach().std(dim=reduce_dims, keepdim=True).clamp_min(1e-6)
+            noisy = noisy + torch.randn_like(tensor) * scale * CONSISTENCY_NOISE_STD
+        if CONSISTENCY_MASK_PROB > 0.0:
+            mask_shape = (tensor.size(0),) + (1,) * (tensor.ndim - 1)
+            keep = (torch.rand(mask_shape, device=tensor.device) > CONSISTENCY_MASK_PROB).to(tensor.dtype)
+            noisy = noisy * keep
+        perturbed.append(noisy)
+    return tuple(perturbed)  # type: ignore[return-value]
+
+
+def distillation_kl(student_logits: torch.Tensor, teacher_logits: torch.Tensor) -> torch.Tensor:
+    temperature = max(CONSISTENCY_TEMPERATURE, 1e-6)
+    student_log_probs = F.log_softmax(student_logits / temperature, dim=1)
+    teacher_probs = F.softmax(teacher_logits.detach() / temperature, dim=1)
+    return F.kl_div(student_log_probs, teacher_probs, reduction="batchmean") * (temperature ** 2)
+
+
+def compute_consistency_loss(
+    clean_outputs: Dict[str, torch.Tensor],
+    perturbed_outputs: Dict[str, torch.Tensor],
+) -> torch.Tensor:
+    joint_consistency = distillation_kl(
+        perturbed_outputs["joint_logits"],
+        clean_outputs["joint_logits"],
+    )
+    intent_consistency = distillation_kl(
+        perturbed_outputs["intent_logits"],
+        clean_outputs["intent_logits"],
+    )
+    scene_consistency = distillation_kl(
+        perturbed_outputs["scene_logits"],
+        clean_outputs["scene_logits"],
+    )
+    return (
+        joint_consistency
+        + CONSISTENCY_INTENT_WEIGHT * intent_consistency
+        + CONSISTENCY_SCENE_WEIGHT * scene_consistency
+    )
+
+
 def train_one_epoch(
     model: nn.Module,
     loader: DataLoader,
@@ -420,6 +479,7 @@ def train_one_epoch(
         "base_intent_loss": 0.0,
         "scene_loss": 0.0,
         "gesture_intent_loss": 0.0,
+        "consistency_loss": 0.0,
     }
 
     for batch in loader:
@@ -444,6 +504,20 @@ def train_one_epoch(
             intent_criterion,
             scene_criterion,
         )
+        if CONSISTENCY_WEIGHT > 0.0:
+            perturbed_inputs = perturb_batch_for_consistency(
+                batch_imu,
+                batch_gesture,
+                batch_audio,
+                batch_text,
+                batch_scene,
+            )
+            perturbed_outputs = model(*perturbed_inputs)
+            consistency_loss = compute_consistency_loss(outputs, perturbed_outputs)
+            loss = loss + CONSISTENCY_WEIGHT * consistency_loss
+            loss_parts["consistency_loss"] = float(consistency_loss.item())
+        else:
+            loss_parts["consistency_loss"] = 0.0
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP_NORM)
         optimizer.step()
@@ -644,6 +718,11 @@ def main() -> None:
         f"scene_aux={SCENE_AUX_WEIGHT} gesture_intent_aux={GESTURE_INTENT_AUX_WEIGHT} "
         f"intent_refine_scale={INTENT_REFINE_SCALE} gesture_logit_blend={GESTURE_LOGIT_BLEND}"
     )
+    print(
+        f"[consistency] weight={CONSISTENCY_WEIGHT} mask_prob={CONSISTENCY_MASK_PROB} "
+        f"noise_std={CONSISTENCY_NOISE_STD} temperature={CONSISTENCY_TEMPERATURE} "
+        f"intent_weight={CONSISTENCY_INTENT_WEIGHT} scene_weight={CONSISTENCY_SCENE_WEIGHT}"
+    )
 
     print("[step] load train split with real scene")
     train_raw_features, train_raw_labels, train_raw_scene_targets, train_scene_selection = base.load_multimodal_data(
@@ -794,6 +873,7 @@ def main() -> None:
     val_scene_losses: List[float] = []
     train_gesture_intent_losses: List[float] = []
     val_gesture_intent_losses: List[float] = []
+    train_consistency_losses: List[float] = []
 
     print("[step] start training")
     for epoch in range(1, EPOCHS + 1):
@@ -827,6 +907,7 @@ def main() -> None:
         val_scene_losses.append(float(val_metrics["scene_loss"]))
         train_gesture_intent_losses.append(float(train_parts["gesture_intent_loss"]))
         val_gesture_intent_losses.append(float(val_metrics["gesture_intent_loss"]))
+        train_consistency_losses.append(float(train_parts["consistency_loss"]))
 
         selection_score = (
             float(val_metrics["joint_acc"])
@@ -960,6 +1041,12 @@ def main() -> None:
                 "gesture_logit_blend": GESTURE_LOGIT_BLEND,
                 "selection_intent_weight": SELECTION_INTENT_WEIGHT,
                 "selection_scene_weight": SELECTION_SCENE_WEIGHT,
+                "consistency_weight": CONSISTENCY_WEIGHT,
+                "consistency_mask_prob": CONSISTENCY_MASK_PROB,
+                "consistency_noise_std": CONSISTENCY_NOISE_STD,
+                "consistency_temperature": CONSISTENCY_TEMPERATURE,
+                "consistency_intent_weight": CONSISTENCY_INTENT_WEIGHT,
+                "consistency_scene_weight": CONSISTENCY_SCENE_WEIGHT,
                 "drop_probabilities": {
                     "imu": IMU_DROP_PROB,
                     "gesture": 0.0,
@@ -1030,6 +1117,7 @@ def main() -> None:
                 "val_scene_loss": [float(value) for value in val_scene_losses],
                 "train_gesture_intent_loss": [float(value) for value in train_gesture_intent_losses],
                 "val_gesture_intent_loss": [float(value) for value in val_gesture_intent_losses],
+                "train_consistency_loss": [float(value) for value in train_consistency_losses],
             },
             "avg_modality_gates": {
                 "validation": {
@@ -1215,6 +1303,12 @@ def main() -> None:
             "gesture_logit_blend": GESTURE_LOGIT_BLEND,
             "selection_intent_weight": SELECTION_INTENT_WEIGHT,
             "selection_scene_weight": SELECTION_SCENE_WEIGHT,
+            "consistency_weight": CONSISTENCY_WEIGHT,
+            "consistency_mask_prob": CONSISTENCY_MASK_PROB,
+            "consistency_noise_std": CONSISTENCY_NOISE_STD,
+            "consistency_temperature": CONSISTENCY_TEMPERATURE,
+            "consistency_intent_weight": CONSISTENCY_INTENT_WEIGHT,
+            "consistency_scene_weight": CONSISTENCY_SCENE_WEIGHT,
             "modality_contribution_method": "shapley_values_on_masked_test_subsets",
             "drop_probabilities": {
                 "imu": IMU_DROP_PROB,
@@ -1300,6 +1394,7 @@ def main() -> None:
             "val_scene_loss": [float(value) for value in val_scene_losses],
             "train_gesture_intent_loss": [float(value) for value in train_gesture_intent_losses],
             "val_gesture_intent_loss": [float(value) for value in val_gesture_intent_losses],
+            "train_consistency_loss": [float(value) for value in train_consistency_losses],
         },
         "avg_modality_gates": {
             "validation": {
