@@ -80,6 +80,14 @@ def build_env(args: argparse.Namespace) -> dict[str, str]:
         env["IMPROVED_REAL_SCENE_A2_CONSISTENCY_TEMPERATURE"] = str(args.consistency_temperature)
     if args.consistency_modalities:
         env["IMPROVED_REAL_SCENE_A2_CONSISTENCY_MODALITIES"] = ",".join(args.consistency_modalities)
+    if args.margin_loss_weight is not None:
+        env["IMPROVED_REAL_SCENE_A2_MARGIN_LOSS_WEIGHT"] = str(args.margin_loss_weight)
+    if args.margin_value is not None:
+        env["IMPROVED_REAL_SCENE_A2_MARGIN_VALUE"] = str(args.margin_value)
+    if args.margin_intent_confusion_weight is not None:
+        env["IMPROVED_REAL_SCENE_A2_MARGIN_INTENT_CONFUSION_WEIGHT"] = str(args.margin_intent_confusion_weight)
+    if args.margin_scene_confusion_weight is not None:
+        env["IMPROVED_REAL_SCENE_A2_MARGIN_SCENE_CONFUSION_WEIGHT"] = str(args.margin_scene_confusion_weight)
     if args.skip_test_eval:
         env["SMART_AR_SKIP_TEST_EVAL"] = "1"
     return env
@@ -113,6 +121,10 @@ def main() -> None:
     parser.add_argument("--consistency-noise-std", type=float)
     parser.add_argument("--consistency-temperature", type=float)
     parser.add_argument("--consistency-modalities", nargs="*", default=[])
+    parser.add_argument("--margin-loss-weight", type=float)
+    parser.add_argument("--margin-value", type=float)
+    parser.add_argument("--margin-intent-confusion-weight", type=float)
+    parser.add_argument("--margin-scene-confusion-weight", type=float)
     parser.add_argument("--skip-test-eval", action="store_true")
     args = parser.parse_args()
 

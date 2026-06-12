@@ -68,6 +68,10 @@ CONSISTENCY_MODALITIES = tuple(
     for item in os.getenv("IMPROVED_REAL_SCENE_A2_CONSISTENCY_MODALITIES", "imu,audio").split(",")
     if item.strip()
 )
+MARGIN_LOSS_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_MARGIN_LOSS_WEIGHT", "0.0"))
+MARGIN_VALUE = float(os.getenv("IMPROVED_REAL_SCENE_A2_MARGIN_VALUE", "0.35"))
+MARGIN_INTENT_CONFUSION_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_MARGIN_INTENT_CONFUSION_WEIGHT", "1.0"))
+MARGIN_SCENE_CONFUSION_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_MARGIN_SCENE_CONFUSION_WEIGHT", "1.0"))
 
 MODALITY_KEYS = ("imu", "gesture", "audio", "text", "scene")
 MODALITY_DISPLAY_NAMES = base.MODALITY_DISPLAY_NAMES
@@ -378,6 +382,8 @@ class Anchor2PerceiverIO(nn.Module):
             "intent_refine_logits": intent_refine_logits,
             "intent_refine_gate": intent_refine_gate,
             "modality_gates": modality_gates,
+            "joint_scene_index": self.joint_scene_index,
+            "joint_intent_index": self.joint_intent_index,
         }
 
 
@@ -412,6 +418,43 @@ def compute_loss(
         "scene_loss": float(scene_loss.item()),
         "gesture_intent_loss": float(gesture_intent_loss.item()),
     }
+
+
+def masked_max(logits: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    masked = logits.masked_fill(~mask, torch.finfo(logits.dtype).min)
+    return masked.max(dim=1).values
+
+
+def compute_hierarchical_margin_loss(
+    outputs: Dict[str, torch.Tensor],
+    joint_targets: torch.Tensor,
+    intent_targets: torch.Tensor,
+    scene_targets: torch.Tensor,
+) -> torch.Tensor:
+    joint_logits = outputs["joint_logits"]
+    true_logits = joint_logits.gather(1, joint_targets.unsqueeze(1)).squeeze(1)
+    joint_intent_index = outputs["joint_intent_index"].to(joint_logits.device)
+    joint_scene_index = outputs["joint_scene_index"].to(joint_logits.device)
+
+    same_intent_other_scene = (
+        joint_intent_index.unsqueeze(0) == intent_targets.unsqueeze(1)
+    ) & (
+        joint_scene_index.unsqueeze(0) != scene_targets.unsqueeze(1)
+    )
+    same_scene_other_intent = (
+        joint_scene_index.unsqueeze(0) == scene_targets.unsqueeze(1)
+    ) & (
+        joint_intent_index.unsqueeze(0) != intent_targets.unsqueeze(1)
+    )
+
+    scene_confusion_neg = masked_max(joint_logits, same_intent_other_scene)
+    intent_confusion_neg = masked_max(joint_logits, same_scene_other_intent)
+    scene_margin = F.relu(MARGIN_VALUE + scene_confusion_neg - true_logits)
+    intent_margin = F.relu(MARGIN_VALUE + intent_confusion_neg - true_logits)
+    return (
+        MARGIN_SCENE_CONFUSION_WEIGHT * scene_margin.mean()
+        + MARGIN_INTENT_CONFUSION_WEIGHT * intent_margin.mean()
+    )
 
 
 def perturb_batch_for_consistency(
@@ -488,6 +531,7 @@ def train_one_epoch(
         "scene_loss": 0.0,
         "gesture_intent_loss": 0.0,
         "consistency_loss": 0.0,
+        "margin_loss": 0.0,
     }
 
     for batch in loader:
@@ -526,6 +570,17 @@ def train_one_epoch(
             loss_parts["consistency_loss"] = float(consistency_loss.item())
         else:
             loss_parts["consistency_loss"] = 0.0
+        if MARGIN_LOSS_WEIGHT > 0.0:
+            margin_loss = compute_hierarchical_margin_loss(
+                outputs,
+                batch_joint_y,
+                batch_intent_y,
+                batch_scene_y,
+            )
+            loss = loss + MARGIN_LOSS_WEIGHT * margin_loss
+            loss_parts["margin_loss"] = float(margin_loss.item())
+        else:
+            loss_parts["margin_loss"] = 0.0
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP_NORM)
         optimizer.step()
@@ -732,6 +787,11 @@ def main() -> None:
         f"intent_weight={CONSISTENCY_INTENT_WEIGHT} scene_weight={CONSISTENCY_SCENE_WEIGHT} "
         f"modalities={','.join(CONSISTENCY_MODALITIES)}"
     )
+    print(
+        f"[hier_margin] weight={MARGIN_LOSS_WEIGHT} margin={MARGIN_VALUE} "
+        f"intent_confusion_weight={MARGIN_INTENT_CONFUSION_WEIGHT} "
+        f"scene_confusion_weight={MARGIN_SCENE_CONFUSION_WEIGHT}"
+    )
 
     print("[step] load train split with real scene")
     train_raw_features, train_raw_labels, train_raw_scene_targets, train_scene_selection = base.load_multimodal_data(
@@ -883,6 +943,7 @@ def main() -> None:
     train_gesture_intent_losses: List[float] = []
     val_gesture_intent_losses: List[float] = []
     train_consistency_losses: List[float] = []
+    train_margin_losses: List[float] = []
 
     print("[step] start training")
     for epoch in range(1, EPOCHS + 1):
@@ -917,6 +978,7 @@ def main() -> None:
         train_gesture_intent_losses.append(float(train_parts["gesture_intent_loss"]))
         val_gesture_intent_losses.append(float(val_metrics["gesture_intent_loss"]))
         train_consistency_losses.append(float(train_parts["consistency_loss"]))
+        train_margin_losses.append(float(train_parts["margin_loss"]))
 
         selection_score = (
             float(val_metrics["joint_acc"])
@@ -1057,6 +1119,10 @@ def main() -> None:
                 "consistency_intent_weight": CONSISTENCY_INTENT_WEIGHT,
                 "consistency_scene_weight": CONSISTENCY_SCENE_WEIGHT,
                 "consistency_modalities": list(CONSISTENCY_MODALITIES),
+                "margin_loss_weight": MARGIN_LOSS_WEIGHT,
+                "margin_value": MARGIN_VALUE,
+                "margin_intent_confusion_weight": MARGIN_INTENT_CONFUSION_WEIGHT,
+                "margin_scene_confusion_weight": MARGIN_SCENE_CONFUSION_WEIGHT,
                 "drop_probabilities": {
                     "imu": IMU_DROP_PROB,
                     "gesture": 0.0,
@@ -1128,6 +1194,7 @@ def main() -> None:
                 "train_gesture_intent_loss": [float(value) for value in train_gesture_intent_losses],
                 "val_gesture_intent_loss": [float(value) for value in val_gesture_intent_losses],
                 "train_consistency_loss": [float(value) for value in train_consistency_losses],
+                "train_margin_loss": [float(value) for value in train_margin_losses],
             },
             "avg_modality_gates": {
                 "validation": {
@@ -1320,6 +1387,10 @@ def main() -> None:
             "consistency_intent_weight": CONSISTENCY_INTENT_WEIGHT,
             "consistency_scene_weight": CONSISTENCY_SCENE_WEIGHT,
             "consistency_modalities": list(CONSISTENCY_MODALITIES),
+            "margin_loss_weight": MARGIN_LOSS_WEIGHT,
+            "margin_value": MARGIN_VALUE,
+            "margin_intent_confusion_weight": MARGIN_INTENT_CONFUSION_WEIGHT,
+            "margin_scene_confusion_weight": MARGIN_SCENE_CONFUSION_WEIGHT,
             "modality_contribution_method": "shapley_values_on_masked_test_subsets",
             "drop_probabilities": {
                 "imu": IMU_DROP_PROB,
@@ -1406,6 +1477,7 @@ def main() -> None:
             "train_gesture_intent_loss": [float(value) for value in train_gesture_intent_losses],
             "val_gesture_intent_loss": [float(value) for value in val_gesture_intent_losses],
             "train_consistency_loss": [float(value) for value in train_consistency_losses],
+            "train_margin_loss": [float(value) for value in train_margin_losses],
         },
         "avg_modality_gates": {
             "validation": {

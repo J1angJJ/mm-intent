@@ -49,6 +49,14 @@ def build_command(args: argparse.Namespace, group: Sequence[str]) -> list[str]:
         command.extend(["--consistency-temperature", str(args.consistency_temperature)])
     if args.consistency_modalities:
         command.extend(["--consistency-modalities", *args.consistency_modalities])
+    if args.margin_loss_weight is not None:
+        command.extend(["--margin-loss-weight", str(args.margin_loss_weight)])
+    if args.margin_value is not None:
+        command.extend(["--margin-value", str(args.margin_value)])
+    if args.margin_intent_confusion_weight is not None:
+        command.extend(["--margin-intent-confusion-weight", str(args.margin_intent_confusion_weight)])
+    if args.margin_scene_confusion_weight is not None:
+        command.extend(["--margin-scene-confusion-weight", str(args.margin_scene_confusion_weight)])
     return command
 
 
@@ -65,6 +73,10 @@ def main() -> None:
     parser.add_argument("--consistency-noise-std", type=float)
     parser.add_argument("--consistency-temperature", type=float)
     parser.add_argument("--consistency-modalities", nargs="*", default=[])
+    parser.add_argument("--margin-loss-weight", type=float)
+    parser.add_argument("--margin-value", type=float)
+    parser.add_argument("--margin-intent-confusion-weight", type=float)
+    parser.add_argument("--margin-scene-confusion-weight", type=float)
     parser.add_argument("--execute", action="store_true", help="Actually run commands. Default only prints them.")
     args = parser.parse_args()
     if args.output_model_name is None:
