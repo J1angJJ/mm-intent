@@ -64,6 +64,14 @@ def build_command(args: argparse.Namespace, modality: str, level: float) -> list
         command.append("--no-missing-distill-force-mask")
     for modality, probability in args.missing_distill_prob:
         command.extend(["--missing-distill-prob", modality, str(probability)])
+    if args.focal_loss_gamma is not None:
+        command.extend(["--focal-loss-gamma", str(args.focal_loss_gamma)])
+    if args.no_focal_loss_apply_aux:
+        command.append("--no-focal-loss-apply-aux")
+    if args.fallback_max_gate is not None:
+        command.extend(["--fallback-max-gate", str(args.fallback_max_gate)])
+    if args.fallback_aux_weight is not None:
+        command.extend(["--fallback-aux-weight", str(args.fallback_aux_weight)])
     return command
 
 
@@ -90,6 +98,10 @@ def main() -> None:
     parser.add_argument("--missing-distill-modalities", nargs="*", default=[])
     parser.add_argument("--no-missing-distill-force-mask", action="store_true")
     parser.add_argument("--missing-distill-prob", nargs=2, action="append", metavar=("MODALITY", "PROB"), default=[])
+    parser.add_argument("--focal-loss-gamma", type=float)
+    parser.add_argument("--no-focal-loss-apply-aux", action="store_true")
+    parser.add_argument("--fallback-max-gate", type=float)
+    parser.add_argument("--fallback-aux-weight", type=float)
     parser.add_argument("--execute", action="store_true", help="Actually run commands. Default only prints them.")
     args = parser.parse_args()
     args.missing_distill_prob = [

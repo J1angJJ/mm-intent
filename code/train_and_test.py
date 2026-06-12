@@ -89,6 +89,10 @@ MISSING_DISTILL_PROBS = {
     "text": float(os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_TEXT_PROB", "0.35")),
     "scene": float(os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_SCENE_PROB", "0.25")),
 }
+FOCAL_LOSS_GAMMA = float(os.getenv("IMPROVED_REAL_SCENE_A2_FOCAL_LOSS_GAMMA", "0.0"))
+FOCAL_LOSS_APPLY_AUX = os.getenv("IMPROVED_REAL_SCENE_A2_FOCAL_LOSS_APPLY_AUX", "1") == "1"
+FALLBACK_MAX_GATE = float(os.getenv("IMPROVED_REAL_SCENE_A2_FALLBACK_MAX_GATE", "0.0"))
+FALLBACK_AUX_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_FALLBACK_AUX_WEIGHT", "0.0"))
 
 MODALITY_KEYS = ("imu", "gesture", "audio", "text", "scene")
 MODALITY_DISPLAY_NAMES = base.MODALITY_DISPLAY_NAMES
@@ -288,6 +292,33 @@ class Anchor2PerceiverIO(nn.Module):
             nn.Dropout(dropout),
             nn.Linear(model_dim, num_intent_classes),
         )
+        self.fallback_encoder = nn.Sequential(
+            nn.LayerNorm(model_dim * len(MODALITY_KEYS)),
+            nn.Linear(model_dim * len(MODALITY_KEYS), model_dim * 2),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(model_dim * 2, model_dim),
+            nn.LayerNorm(model_dim),
+        )
+        self.fallback_intent_head = nn.Sequential(
+            nn.Linear(model_dim, model_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(model_dim, num_intent_classes),
+        )
+        self.fallback_scene_head = nn.Sequential(
+            nn.Linear(model_dim, model_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(model_dim, num_scene_classes),
+        )
+        self.fallback_gate = nn.Sequential(
+            nn.LayerNorm(model_dim * 3),
+            nn.Linear(model_dim * 3, model_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(model_dim, 1),
+        )
 
         scene_name_to_idx = {name: idx for idx, name in enumerate([base.SCENE_ID_TO_NAME[i] for i in range(num_scene_classes)])}
         intent_name_to_idx = {name: idx for idx, name in enumerate([base.INTENT_NAMES[i] for i in range(num_intent_classes)])}
@@ -378,7 +409,29 @@ class Anchor2PerceiverIO(nn.Module):
             INTENT_REFINE_SCALE * intent_refine_logits
             + GESTURE_LOGIT_BLEND * gesture_intent_logits
         )
-        joint_logits = scene_logits.index_select(1, self.joint_scene_index) + intent_logits.index_select(1, self.joint_intent_index)
+        joint_logits_main = scene_logits.index_select(1, self.joint_scene_index) + intent_logits.index_select(1, self.joint_intent_index)
+
+        fallback_input = torch.cat(
+            [
+                imu_tokens.mean(dim=1),
+                gesture_tokens.mean(dim=1),
+                audio_tokens.mean(dim=1),
+                text_tokens.mean(dim=1),
+                scene_token.squeeze(1),
+            ],
+            dim=-1,
+        )
+        fallback_repr = self.fallback_encoder(fallback_input)
+        fallback_intent_logits = self.fallback_intent_head(fallback_repr)
+        fallback_scene_logits = self.fallback_scene_head(fallback_repr)
+        fallback_joint_logits = (
+            fallback_scene_logits.index_select(1, self.joint_scene_index)
+            + fallback_intent_logits.index_select(1, self.joint_intent_index)
+        )
+        fallback_gate = FALLBACK_MAX_GATE * torch.sigmoid(
+            self.fallback_gate(torch.cat([anchor_repr, fused, fallback_repr], dim=-1))
+        )
+        joint_logits = (1.0 - fallback_gate) * joint_logits_main + fallback_gate * fallback_joint_logits
 
         modality_gates = torch.cat(
             [
@@ -392,12 +445,17 @@ class Anchor2PerceiverIO(nn.Module):
         )
         return {
             "joint_logits": joint_logits,
+            "main_joint_logits": joint_logits_main,
             "intent_logits": intent_logits,
             "base_intent_logits": base_intent_logits,
             "scene_logits": scene_logits,
             "gesture_intent_logits": gesture_intent_logits,
             "intent_refine_logits": intent_refine_logits,
             "intent_refine_gate": intent_refine_gate,
+            "fallback_joint_logits": fallback_joint_logits,
+            "fallback_intent_logits": fallback_intent_logits,
+            "fallback_scene_logits": fallback_scene_logits,
+            "fallback_gate": fallback_gate,
             "modality_gates": modality_gates,
             "joint_scene_index": self.joint_scene_index,
             "joint_intent_index": self.joint_intent_index,
@@ -407,6 +465,30 @@ class Anchor2PerceiverIO(nn.Module):
 # ============================================================
 # 4. Train / evaluate
 # ============================================================
+class WeightedFocalLoss(nn.Module):
+    def __init__(
+        self,
+        weight: torch.Tensor | None = None,
+        gamma: float = 2.0,
+    ):
+        super().__init__()
+        self.gamma = gamma
+        if weight is None:
+            self.register_buffer("weight", None)
+        else:
+            self.register_buffer("weight", weight)
+
+    def forward(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        log_probs = F.log_softmax(logits, dim=1)
+        probs = log_probs.exp()
+        target_log_probs = log_probs.gather(1, targets.unsqueeze(1)).squeeze(1)
+        target_probs = probs.gather(1, targets.unsqueeze(1)).squeeze(1)
+        losses = -((1.0 - target_probs).clamp_min(1e-6) ** self.gamma) * target_log_probs
+        if self.weight is not None:
+            losses = losses * self.weight.to(logits.device).gather(0, targets)
+        return losses.mean()
+
+
 def compute_loss(
     outputs: Dict[str, torch.Tensor],
     joint_targets: torch.Tensor,
@@ -421,12 +503,17 @@ def compute_loss(
     base_intent_loss = intent_criterion(outputs["base_intent_logits"], intent_targets)
     scene_loss = scene_criterion(outputs["scene_logits"], scene_targets)
     gesture_intent_loss = intent_criterion(outputs["gesture_intent_logits"], intent_targets)
+    fallback_joint_loss = joint_criterion(outputs["fallback_joint_logits"], joint_targets)
+    fallback_intent_loss = intent_criterion(outputs["fallback_intent_logits"], intent_targets)
+    fallback_scene_loss = scene_criterion(outputs["fallback_scene_logits"], scene_targets)
+    fallback_loss = fallback_joint_loss + 0.35 * fallback_intent_loss + 0.15 * fallback_scene_loss
     total_loss = (
         joint_loss
         + INTENT_AUX_WEIGHT * intent_loss
         + BASE_INTENT_AUX_WEIGHT * base_intent_loss
         + SCENE_AUX_WEIGHT * scene_loss
         + GESTURE_INTENT_AUX_WEIGHT * gesture_intent_loss
+        + FALLBACK_AUX_WEIGHT * fallback_loss
     )
     return total_loss, {
         "joint_loss": float(joint_loss.item()),
@@ -434,6 +521,7 @@ def compute_loss(
         "base_intent_loss": float(base_intent_loss.item()),
         "scene_loss": float(scene_loss.item()),
         "gesture_intent_loss": float(gesture_intent_loss.item()),
+        "fallback_loss": float(fallback_loss.item()),
     }
 
 
@@ -631,6 +719,7 @@ def train_one_epoch(
         "base_intent_loss": 0.0,
         "scene_loss": 0.0,
         "gesture_intent_loss": 0.0,
+        "fallback_loss": 0.0,
         "consistency_loss": 0.0,
         "margin_loss": 0.0,
         "missing_distill_loss": 0.0,
@@ -733,6 +822,7 @@ def evaluate(
         "base_intent_loss": 0.0,
         "scene_loss": 0.0,
         "gesture_intent_loss": 0.0,
+        "fallback_loss": 0.0,
     }
 
     joint_true: List[np.ndarray] = []
@@ -914,6 +1004,12 @@ def main() -> None:
         f"force_mask={int(MISSING_DISTILL_FORCE_MASK)} modalities={','.join(MISSING_DISTILL_MODALITIES)} "
         f"probs={MISSING_DISTILL_PROBS}"
     )
+    print(
+        f"[focal] gamma={FOCAL_LOSS_GAMMA} apply_aux={int(FOCAL_LOSS_APPLY_AUX)}"
+    )
+    print(
+        f"[fallback] max_gate={FALLBACK_MAX_GATE} aux_weight={FALLBACK_AUX_WEIGHT}"
+    )
 
     print("[step] load train split with real scene")
     train_raw_features, train_raw_labels, train_raw_scene_targets, train_scene_selection = base.load_multimodal_data(
@@ -1024,9 +1120,18 @@ def main() -> None:
     joint_weights = base.build_class_weights(y_train_joint, len(joint_class_names))
     intent_weights = base.build_class_weights(y_train_raw, len(intent_class_names))
     scene_weights = base.build_class_weights(y_train_scene_raw, len(scene_class_names))
-    joint_criterion = nn.CrossEntropyLoss(weight=joint_weights, label_smoothing=LABEL_SMOOTHING)
-    intent_criterion = nn.CrossEntropyLoss(weight=intent_weights, label_smoothing=LABEL_SMOOTHING)
-    scene_criterion = nn.CrossEntropyLoss(weight=scene_weights, label_smoothing=LABEL_SMOOTHING)
+    if FOCAL_LOSS_GAMMA > 0.0:
+        joint_criterion = WeightedFocalLoss(weight=joint_weights, gamma=FOCAL_LOSS_GAMMA)
+        if FOCAL_LOSS_APPLY_AUX:
+            intent_criterion = WeightedFocalLoss(weight=intent_weights, gamma=FOCAL_LOSS_GAMMA)
+            scene_criterion = WeightedFocalLoss(weight=scene_weights, gamma=FOCAL_LOSS_GAMMA)
+        else:
+            intent_criterion = nn.CrossEntropyLoss(weight=intent_weights, label_smoothing=LABEL_SMOOTHING)
+            scene_criterion = nn.CrossEntropyLoss(weight=scene_weights, label_smoothing=LABEL_SMOOTHING)
+    else:
+        joint_criterion = nn.CrossEntropyLoss(weight=joint_weights, label_smoothing=LABEL_SMOOTHING)
+        intent_criterion = nn.CrossEntropyLoss(weight=intent_weights, label_smoothing=LABEL_SMOOTHING)
+        scene_criterion = nn.CrossEntropyLoss(weight=scene_weights, label_smoothing=LABEL_SMOOTHING)
     optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
 
     checkpoint_path = OUTPUT_DIR / "improved_real_scene_anchor2.pt"
@@ -1064,6 +1169,8 @@ def main() -> None:
     val_scene_losses: List[float] = []
     train_gesture_intent_losses: List[float] = []
     val_gesture_intent_losses: List[float] = []
+    train_fallback_losses: List[float] = []
+    val_fallback_losses: List[float] = []
     train_consistency_losses: List[float] = []
     train_margin_losses: List[float] = []
     train_missing_distill_losses: List[float] = []
@@ -1100,6 +1207,8 @@ def main() -> None:
         val_scene_losses.append(float(val_metrics["scene_loss"]))
         train_gesture_intent_losses.append(float(train_parts["gesture_intent_loss"]))
         val_gesture_intent_losses.append(float(val_metrics["gesture_intent_loss"]))
+        train_fallback_losses.append(float(train_parts["fallback_loss"]))
+        val_fallback_losses.append(float(val_metrics["fallback_loss"]))
         train_consistency_losses.append(float(train_parts["consistency_loss"]))
         train_margin_losses.append(float(train_parts["margin_loss"]))
         train_missing_distill_losses.append(float(train_parts["missing_distill_loss"]))
@@ -1254,6 +1363,10 @@ def main() -> None:
                 "missing_distill_force_mask": MISSING_DISTILL_FORCE_MASK,
                 "missing_distill_modalities": list(MISSING_DISTILL_MODALITIES),
                 "missing_distill_probabilities": MISSING_DISTILL_PROBS,
+                "focal_loss_gamma": FOCAL_LOSS_GAMMA,
+                "focal_loss_apply_aux": FOCAL_LOSS_APPLY_AUX,
+                "fallback_max_gate": FALLBACK_MAX_GATE,
+                "fallback_aux_weight": FALLBACK_AUX_WEIGHT,
                 "drop_probabilities": {
                     "imu": IMU_DROP_PROB,
                     "gesture": 0.0,
@@ -1296,6 +1409,7 @@ def main() -> None:
                 "val_base_intent_loss_only": float(val_metrics["base_intent_loss"]),
                 "val_scene_loss_only": float(val_metrics["scene_loss"]),
                 "val_gesture_intent_loss_only": float(val_metrics["gesture_intent_loss"]),
+                "val_fallback_loss_only": float(val_metrics["fallback_loss"]),
             },
             "class_names": joint_class_names,
             "intent_class_names": intent_class_names,
@@ -1324,6 +1438,8 @@ def main() -> None:
                 "val_scene_loss": [float(value) for value in val_scene_losses],
                 "train_gesture_intent_loss": [float(value) for value in train_gesture_intent_losses],
                 "val_gesture_intent_loss": [float(value) for value in val_gesture_intent_losses],
+                "train_fallback_loss": [float(value) for value in train_fallback_losses],
+                "val_fallback_loss": [float(value) for value in val_fallback_losses],
                 "train_consistency_loss": [float(value) for value in train_consistency_losses],
                 "train_margin_loss": [float(value) for value in train_margin_losses],
                 "train_missing_distill_loss": [float(value) for value in train_missing_distill_losses],
@@ -1530,6 +1646,10 @@ def main() -> None:
             "missing_distill_force_mask": MISSING_DISTILL_FORCE_MASK,
             "missing_distill_modalities": list(MISSING_DISTILL_MODALITIES),
             "missing_distill_probabilities": MISSING_DISTILL_PROBS,
+            "focal_loss_gamma": FOCAL_LOSS_GAMMA,
+            "focal_loss_apply_aux": FOCAL_LOSS_APPLY_AUX,
+            "fallback_max_gate": FALLBACK_MAX_GATE,
+            "fallback_aux_weight": FALLBACK_AUX_WEIGHT,
             "modality_contribution_method": "shapley_values_on_masked_test_subsets",
             "drop_probabilities": {
                 "imu": IMU_DROP_PROB,
@@ -1578,6 +1698,7 @@ def main() -> None:
             "val_base_intent_loss_only": float(val_metrics["base_intent_loss"]),
             "val_scene_loss_only": float(val_metrics["scene_loss"]),
             "val_gesture_intent_loss_only": float(val_metrics["gesture_intent_loss"]),
+            "val_fallback_loss_only": float(val_metrics["fallback_loss"]),
             "test_loss": float(test_metrics["loss"]),
             "test_joint_acc": float(test_metrics["joint_acc"]),
             "test_intent_acc": float(np.mean(y_test_intent_true == y_test_intent_pred)),
@@ -1587,6 +1708,7 @@ def main() -> None:
             "test_base_intent_loss_only": float(test_metrics["base_intent_loss"]),
             "test_scene_loss_only": float(test_metrics["scene_loss"]),
             "test_gesture_intent_loss_only": float(test_metrics["gesture_intent_loss"]),
+            "test_fallback_loss_only": float(test_metrics["fallback_loss"]),
         },
         "class_names": joint_class_names,
         "intent_class_names": intent_class_names,
@@ -1615,6 +1737,8 @@ def main() -> None:
             "val_scene_loss": [float(value) for value in val_scene_losses],
             "train_gesture_intent_loss": [float(value) for value in train_gesture_intent_losses],
             "val_gesture_intent_loss": [float(value) for value in val_gesture_intent_losses],
+            "train_fallback_loss": [float(value) for value in train_fallback_losses],
+            "val_fallback_loss": [float(value) for value in val_fallback_losses],
             "train_consistency_loss": [float(value) for value in train_consistency_losses],
             "train_margin_loss": [float(value) for value in train_margin_losses],
             "train_missing_distill_loss": [float(value) for value in train_missing_distill_losses],

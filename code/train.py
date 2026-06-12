@@ -102,6 +102,14 @@ def build_env(args: argparse.Namespace) -> dict[str, str]:
         env["IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_FORCE_MASK"] = "1" if args.missing_distill_force_mask else "0"
     for modality, value in args.missing_distill_probs:
         env[f"IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_{modality.upper()}_PROB"] = str(value)
+    if args.focal_loss_gamma is not None:
+        env["IMPROVED_REAL_SCENE_A2_FOCAL_LOSS_GAMMA"] = str(args.focal_loss_gamma)
+    if args.no_focal_loss_apply_aux:
+        env["IMPROVED_REAL_SCENE_A2_FOCAL_LOSS_APPLY_AUX"] = "0"
+    if args.fallback_max_gate is not None:
+        env["IMPROVED_REAL_SCENE_A2_FALLBACK_MAX_GATE"] = str(args.fallback_max_gate)
+    if args.fallback_aux_weight is not None:
+        env["IMPROVED_REAL_SCENE_A2_FALLBACK_AUX_WEIGHT"] = str(args.fallback_aux_weight)
     if args.skip_test_eval:
         env["SMART_AR_SKIP_TEST_EVAL"] = "1"
     return env
@@ -154,6 +162,10 @@ def main() -> None:
         default=[],
         help="Per-modality missing distillation drop probability, e.g. --missing-distill-prob text 0.35",
     )
+    parser.add_argument("--focal-loss-gamma", type=float)
+    parser.add_argument("--no-focal-loss-apply-aux", action="store_true")
+    parser.add_argument("--fallback-max-gate", type=float)
+    parser.add_argument("--fallback-aux-weight", type=float)
     parser.add_argument("--skip-test-eval", action="store_true")
     args = parser.parse_args()
     args.missing_distill_probs = [
