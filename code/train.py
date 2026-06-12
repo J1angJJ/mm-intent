@@ -51,6 +51,12 @@ def run_commands(commands: Iterable[Sequence[str]], env: dict[str, str]) -> None
 
 def build_env(args: argparse.Namespace) -> dict[str, str]:
     env = os.environ.copy()
+    if args.seed is not None:
+        env["SMART_AR_RANDOM_SEED"] = str(args.seed)
+    if args.val_split is not None:
+        env["SMART_AR_VAL_SPLIT"] = str(args.val_split)
+    if args.test_video_names:
+        env["SMART_AR_TEST_VIDEO_NAMES"] = ",".join(args.test_video_names)
     if args.output_dir:
         env["SMART_AR_MODEL_OUTPUT_DIR"] = str(Path(args.output_dir).resolve())
     if args.epochs is not None:
@@ -85,6 +91,9 @@ def main() -> None:
     parser.add_argument("--skip-feature-check", action="store_true")
     parser.add_argument("--epochs", type=int)
     parser.add_argument("--patience", type=int)
+    parser.add_argument("--seed", type=int)
+    parser.add_argument("--val-split", type=float)
+    parser.add_argument("--test-video-names", nargs="*", default=[])
     parser.add_argument("--output-dir")
     parser.add_argument("--missing-modalities", nargs="*", default=[])
     parser.add_argument("--noise-modality", choices=("imu", "gesture", "audio", "text", "scene"))

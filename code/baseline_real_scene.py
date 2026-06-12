@@ -66,8 +66,8 @@ SCENE_DIRS = {
 }
 SCENE_CACHE_DIR = REAL_SCENE_CACHE_DIR
 
-RANDOM_SEED = 42
-VAL_SPLIT = 0.2
+RANDOM_SEED = int(os.getenv("SMART_AR_RANDOM_SEED", "42"))
+VAL_SPLIT = float(os.getenv("SMART_AR_VAL_SPLIT", "0.2"))
 TARGET_TIMESTEPS = 10
 NUM_MODALITIES = 5
 GESTURE_FEAT_DIM = 768
@@ -161,7 +161,7 @@ VIDEO_LABELS = {
     "interaction_20260306_090441.mp4": 1,
 }
 
-TEST_VIDEO_NAMES = [
+DEFAULT_TEST_VIDEO_NAMES = [
     "interaction_20260306_072344.mp4",
     "interaction_20260227_122606.mp4",
     "interaction_20260227_122952.mp4",
@@ -176,6 +176,18 @@ TEST_VIDEO_NAMES = [
     "interaction_20260306_085830.mp4",
     "interaction_20260306_090441.mp4",
 ]
+
+
+def parse_video_name_list(raw_value: str) -> List[str]:
+    return [item.strip() for item in raw_value.replace(";", ",").split(",") if item.strip()]
+
+
+TEST_VIDEO_NAMES = parse_video_name_list(
+    os.getenv("SMART_AR_TEST_VIDEO_NAMES", ",".join(DEFAULT_TEST_VIDEO_NAMES))
+)
+unknown_test_videos = sorted(set(TEST_VIDEO_NAMES) - set(VIDEO_LABELS))
+if unknown_test_videos:
+    raise RuntimeError(f"Unknown SMART_AR_TEST_VIDEO_NAMES entries: {unknown_test_videos}")
 TRAIN_VIDEO_NAMES = [
     video_name for video_name in VIDEO_LABELS if video_name not in TEST_VIDEO_NAMES
 ]

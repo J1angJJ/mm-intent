@@ -92,3 +92,65 @@
 
 ### 4. 课程项目代码提交
 - 提交小组完整代码压缩文件，包括已训练模型文件。在报告中汇报模型训练过程和测试过程、模型效果、代码结构、代码运行方式等。汇报总训练时间、平均样本训练时间、平均样本测试等。
+
+### 5. 泛化与过拟合检查
+
+在模态缺失和噪声实验前，建议先运行泛化检查，确认主结果不是由单一随机种子或固定测试划分偶然得到。
+
+新增脚本：
+
+```bash
+python code/run_generalization_experiments.py
+```
+
+默认 dry-run，不会真正训练。它会生成两类实验：
+
+- 默认测试集多随机种子重复：`seed=7,42,123`。
+- 按采集日期整批留出测试：`20260131`、`20260227`、`20260301`、`20260306`。
+
+服务器正式执行：
+
+```bash
+python code/run_generalization_experiments.py \
+  --model improved \
+  --epochs 100 \
+  --patience 4 \
+  --execute 2>&1 | tee logs_generalization_improved.txt
+```
+
+断点续跑：
+
+```bash
+python code/run_generalization_experiments.py \
+  --model improved \
+  --epochs 100 \
+  --patience 4 \
+  --skip-existing \
+  --execute 2>&1 | tee -a logs_generalization_improved.txt
+```
+
+只跑多随机种子：
+
+```bash
+python code/run_generalization_experiments.py --seed-only --execute
+```
+
+只跑按日期留出：
+
+```bash
+python code/run_generalization_experiments.py --date-only --execute
+```
+
+汇总：
+
+```bash
+python code/collect_experiment_results.py \
+  --root outputs \
+  --out outputs/experiment_summary_generalization.csv
+```
+
+相关环境变量：
+
+- `SMART_AR_RANDOM_SEED`：控制随机种子。
+- `SMART_AR_VAL_SPLIT`：控制训练集内部验证比例，默认 `0.2`。
+- `SMART_AR_TEST_VIDEO_NAMES`：用逗号分隔指定测试视频列表。
