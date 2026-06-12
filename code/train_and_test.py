@@ -63,6 +63,11 @@ CONSISTENCY_NOISE_STD = float(os.getenv("IMPROVED_REAL_SCENE_A2_CONSISTENCY_NOIS
 CONSISTENCY_TEMPERATURE = float(os.getenv("IMPROVED_REAL_SCENE_A2_CONSISTENCY_TEMPERATURE", "2.0"))
 CONSISTENCY_INTENT_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_CONSISTENCY_INTENT_WEIGHT", "0.35"))
 CONSISTENCY_SCENE_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_CONSISTENCY_SCENE_WEIGHT", "0.15"))
+CONSISTENCY_MODALITIES = tuple(
+    item.strip()
+    for item in os.getenv("IMPROVED_REAL_SCENE_A2_CONSISTENCY_MODALITIES", "imu,audio").split(",")
+    if item.strip()
+)
 
 MODALITY_KEYS = ("imu", "gesture", "audio", "text", "scene")
 MODALITY_DISPLAY_NAMES = base.MODALITY_DISPLAY_NAMES
@@ -417,7 +422,10 @@ def perturb_batch_for_consistency(
     batch_scene: torch.Tensor,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     perturbed = []
-    for tensor in (batch_imu, batch_gesture, batch_audio, batch_text, batch_scene):
+    for key, tensor in zip(MODALITY_KEYS, (batch_imu, batch_gesture, batch_audio, batch_text, batch_scene)):
+        if key not in CONSISTENCY_MODALITIES:
+            perturbed.append(tensor)
+            continue
         noisy = tensor
         if CONSISTENCY_NOISE_STD > 0.0:
             reduce_dims = tuple(range(1, tensor.ndim))
@@ -721,7 +729,8 @@ def main() -> None:
     print(
         f"[consistency] weight={CONSISTENCY_WEIGHT} mask_prob={CONSISTENCY_MASK_PROB} "
         f"noise_std={CONSISTENCY_NOISE_STD} temperature={CONSISTENCY_TEMPERATURE} "
-        f"intent_weight={CONSISTENCY_INTENT_WEIGHT} scene_weight={CONSISTENCY_SCENE_WEIGHT}"
+        f"intent_weight={CONSISTENCY_INTENT_WEIGHT} scene_weight={CONSISTENCY_SCENE_WEIGHT} "
+        f"modalities={','.join(CONSISTENCY_MODALITIES)}"
     )
 
     print("[step] load train split with real scene")
@@ -1047,6 +1056,7 @@ def main() -> None:
                 "consistency_temperature": CONSISTENCY_TEMPERATURE,
                 "consistency_intent_weight": CONSISTENCY_INTENT_WEIGHT,
                 "consistency_scene_weight": CONSISTENCY_SCENE_WEIGHT,
+                "consistency_modalities": list(CONSISTENCY_MODALITIES),
                 "drop_probabilities": {
                     "imu": IMU_DROP_PROB,
                     "gesture": 0.0,
@@ -1309,6 +1319,7 @@ def main() -> None:
             "consistency_temperature": CONSISTENCY_TEMPERATURE,
             "consistency_intent_weight": CONSISTENCY_INTENT_WEIGHT,
             "consistency_scene_weight": CONSISTENCY_SCENE_WEIGHT,
+            "consistency_modalities": list(CONSISTENCY_MODALITIES),
             "modality_contribution_method": "shapley_values_on_masked_test_subsets",
             "drop_probabilities": {
                 "imu": IMU_DROP_PROB,

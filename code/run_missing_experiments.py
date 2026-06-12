@@ -47,6 +47,8 @@ def build_command(args: argparse.Namespace, group: Sequence[str]) -> list[str]:
         command.extend(["--consistency-noise-std", str(args.consistency_noise_std)])
     if args.consistency_temperature is not None:
         command.extend(["--consistency-temperature", str(args.consistency_temperature)])
+    if args.consistency_modalities:
+        command.extend(["--consistency-modalities", *args.consistency_modalities])
     return command
 
 
@@ -62,6 +64,7 @@ def main() -> None:
     parser.add_argument("--consistency-mask-prob", type=float)
     parser.add_argument("--consistency-noise-std", type=float)
     parser.add_argument("--consistency-temperature", type=float)
+    parser.add_argument("--consistency-modalities", nargs="*", default=[])
     parser.add_argument("--execute", action="store_true", help="Actually run commands. Default only prints them.")
     args = parser.parse_args()
     if args.output_model_name is None:

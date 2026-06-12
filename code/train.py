@@ -78,6 +78,8 @@ def build_env(args: argparse.Namespace) -> dict[str, str]:
         env["IMPROVED_REAL_SCENE_A2_CONSISTENCY_NOISE_STD"] = str(args.consistency_noise_std)
     if args.consistency_temperature is not None:
         env["IMPROVED_REAL_SCENE_A2_CONSISTENCY_TEMPERATURE"] = str(args.consistency_temperature)
+    if args.consistency_modalities:
+        env["IMPROVED_REAL_SCENE_A2_CONSISTENCY_MODALITIES"] = ",".join(args.consistency_modalities)
     if args.skip_test_eval:
         env["SMART_AR_SKIP_TEST_EVAL"] = "1"
     return env
@@ -110,6 +112,7 @@ def main() -> None:
     parser.add_argument("--consistency-mask-prob", type=float)
     parser.add_argument("--consistency-noise-std", type=float)
     parser.add_argument("--consistency-temperature", type=float)
+    parser.add_argument("--consistency-modalities", nargs="*", default=[])
     parser.add_argument("--skip-test-eval", action="store_true")
     args = parser.parse_args()
 
