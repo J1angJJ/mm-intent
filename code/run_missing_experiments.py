@@ -79,6 +79,12 @@ def build_command(args: argparse.Namespace, group: Sequence[str]) -> list[str]:
         command.extend(["--fallback-max-gate", str(args.fallback_max_gate)])
     if args.fallback_aux_weight is not None:
         command.extend(["--fallback-aux-weight", str(args.fallback_aux_weight)])
+    if args.supcon_loss_weight is not None:
+        command.extend(["--supcon-loss-weight", str(args.supcon_loss_weight)])
+    if args.supcon_temperature is not None:
+        command.extend(["--supcon-temperature", str(args.supcon_temperature)])
+    if args.supcon_target is not None:
+        command.extend(["--supcon-target", args.supcon_target])
     return command
 
 
@@ -110,6 +116,9 @@ def main() -> None:
     parser.add_argument("--no-focal-loss-apply-aux", action="store_true")
     parser.add_argument("--fallback-max-gate", type=float)
     parser.add_argument("--fallback-aux-weight", type=float)
+    parser.add_argument("--supcon-loss-weight", type=float)
+    parser.add_argument("--supcon-temperature", type=float)
+    parser.add_argument("--supcon-target", choices=("joint", "intent", "scene"))
     parser.add_argument("--execute", action="store_true", help="Actually run commands. Default only prints them.")
     args = parser.parse_args()
     args.missing_distill_prob = [

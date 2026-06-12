@@ -110,6 +110,12 @@ def build_env(args: argparse.Namespace) -> dict[str, str]:
         env["IMPROVED_REAL_SCENE_A2_FALLBACK_MAX_GATE"] = str(args.fallback_max_gate)
     if args.fallback_aux_weight is not None:
         env["IMPROVED_REAL_SCENE_A2_FALLBACK_AUX_WEIGHT"] = str(args.fallback_aux_weight)
+    if args.supcon_loss_weight is not None:
+        env["IMPROVED_REAL_SCENE_A2_SUPCON_LOSS_WEIGHT"] = str(args.supcon_loss_weight)
+    if args.supcon_temperature is not None:
+        env["IMPROVED_REAL_SCENE_A2_SUPCON_TEMPERATURE"] = str(args.supcon_temperature)
+    if args.supcon_target is not None:
+        env["IMPROVED_REAL_SCENE_A2_SUPCON_TARGET"] = args.supcon_target
     if args.skip_test_eval:
         env["SMART_AR_SKIP_TEST_EVAL"] = "1"
     return env
@@ -166,6 +172,9 @@ def main() -> None:
     parser.add_argument("--no-focal-loss-apply-aux", action="store_true")
     parser.add_argument("--fallback-max-gate", type=float)
     parser.add_argument("--fallback-aux-weight", type=float)
+    parser.add_argument("--supcon-loss-weight", type=float)
+    parser.add_argument("--supcon-temperature", type=float)
+    parser.add_argument("--supcon-target", choices=("joint", "intent", "scene"))
     parser.add_argument("--skip-test-eval", action="store_true")
     args = parser.parse_args()
     args.missing_distill_probs = [

@@ -93,6 +93,9 @@ FOCAL_LOSS_GAMMA = float(os.getenv("IMPROVED_REAL_SCENE_A2_FOCAL_LOSS_GAMMA", "0
 FOCAL_LOSS_APPLY_AUX = os.getenv("IMPROVED_REAL_SCENE_A2_FOCAL_LOSS_APPLY_AUX", "1") == "1"
 FALLBACK_MAX_GATE = float(os.getenv("IMPROVED_REAL_SCENE_A2_FALLBACK_MAX_GATE", "0.0"))
 FALLBACK_AUX_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_FALLBACK_AUX_WEIGHT", "0.0"))
+SUPCON_LOSS_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_SUPCON_LOSS_WEIGHT", "0.0"))
+SUPCON_TEMPERATURE = float(os.getenv("IMPROVED_REAL_SCENE_A2_SUPCON_TEMPERATURE", "0.1"))
+SUPCON_TARGET = os.getenv("IMPROVED_REAL_SCENE_A2_SUPCON_TARGET", "joint").strip().lower()
 
 MODALITY_KEYS = ("imu", "gesture", "audio", "text", "scene")
 MODALITY_DISPLAY_NAMES = base.MODALITY_DISPLAY_NAMES
@@ -456,6 +459,10 @@ class Anchor2PerceiverIO(nn.Module):
             "fallback_intent_logits": fallback_intent_logits,
             "fallback_scene_logits": fallback_scene_logits,
             "fallback_gate": fallback_gate,
+            "fused_embedding": fused,
+            "anchor_embedding": anchor_repr,
+            "gesture_embedding": gesture_support_feature,
+            "fallback_embedding": fallback_repr,
             "modality_gates": modality_gates,
             "joint_scene_index": self.joint_scene_index,
             "joint_intent_index": self.joint_intent_index,
@@ -560,6 +567,27 @@ def compute_hierarchical_margin_loss(
         MARGIN_SCENE_CONFUSION_WEIGHT * scene_margin.mean()
         + MARGIN_INTENT_CONFUSION_WEIGHT * intent_margin.mean()
     )
+
+
+def supervised_contrastive_loss(
+    embeddings: torch.Tensor,
+    labels: torch.Tensor,
+    temperature: float,
+) -> torch.Tensor:
+    if embeddings.size(0) <= 1:
+        return embeddings.new_tensor(0.0)
+    features = F.normalize(embeddings, dim=1)
+    logits = torch.matmul(features, features.T) / max(temperature, 1e-6)
+    logits = logits - logits.max(dim=1, keepdim=True).values.detach()
+    self_mask = torch.eye(labels.size(0), dtype=torch.bool, device=labels.device)
+    positive_mask = labels.unsqueeze(0).eq(labels.unsqueeze(1)) & ~self_mask
+    valid_anchor = positive_mask.any(dim=1)
+    if not bool(valid_anchor.any().item()):
+        return embeddings.new_tensor(0.0)
+    exp_logits = torch.exp(logits) * (~self_mask).to(logits.dtype)
+    log_prob = logits - torch.log(exp_logits.sum(dim=1, keepdim=True).clamp_min(1e-12))
+    mean_log_prob_pos = (positive_mask.to(logits.dtype) * log_prob).sum(dim=1) / positive_mask.sum(dim=1).clamp_min(1)
+    return -mean_log_prob_pos[valid_anchor].mean()
 
 
 def perturb_batch_for_consistency(
@@ -723,6 +751,7 @@ def train_one_epoch(
         "consistency_loss": 0.0,
         "margin_loss": 0.0,
         "missing_distill_loss": 0.0,
+        "supcon_loss": 0.0,
     }
 
     for batch in loader:
@@ -786,6 +815,22 @@ def train_one_epoch(
             loss_parts["missing_distill_loss"] = float(missing_distill_loss.item())
         else:
             loss_parts["missing_distill_loss"] = 0.0
+        if SUPCON_LOSS_WEIGHT > 0.0:
+            if SUPCON_TARGET == "intent":
+                supcon_labels = batch_intent_y
+            elif SUPCON_TARGET == "scene":
+                supcon_labels = batch_scene_y
+            else:
+                supcon_labels = batch_joint_y
+            supcon_loss = supervised_contrastive_loss(
+                outputs["fused_embedding"],
+                supcon_labels,
+                SUPCON_TEMPERATURE,
+            )
+            loss = loss + SUPCON_LOSS_WEIGHT * supcon_loss
+            loss_parts["supcon_loss"] = float(supcon_loss.item())
+        else:
+            loss_parts["supcon_loss"] = 0.0
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP_NORM)
         optimizer.step()
@@ -1010,6 +1055,9 @@ def main() -> None:
     print(
         f"[fallback] max_gate={FALLBACK_MAX_GATE} aux_weight={FALLBACK_AUX_WEIGHT}"
     )
+    print(
+        f"[supcon] weight={SUPCON_LOSS_WEIGHT} temperature={SUPCON_TEMPERATURE} target={SUPCON_TARGET}"
+    )
 
     print("[step] load train split with real scene")
     train_raw_features, train_raw_labels, train_raw_scene_targets, train_scene_selection = base.load_multimodal_data(
@@ -1174,6 +1222,7 @@ def main() -> None:
     train_consistency_losses: List[float] = []
     train_margin_losses: List[float] = []
     train_missing_distill_losses: List[float] = []
+    train_supcon_losses: List[float] = []
 
     print("[step] start training")
     for epoch in range(1, EPOCHS + 1):
@@ -1212,6 +1261,7 @@ def main() -> None:
         train_consistency_losses.append(float(train_parts["consistency_loss"]))
         train_margin_losses.append(float(train_parts["margin_loss"]))
         train_missing_distill_losses.append(float(train_parts["missing_distill_loss"]))
+        train_supcon_losses.append(float(train_parts["supcon_loss"]))
 
         selection_score = (
             float(val_metrics["joint_acc"])
@@ -1367,6 +1417,9 @@ def main() -> None:
                 "focal_loss_apply_aux": FOCAL_LOSS_APPLY_AUX,
                 "fallback_max_gate": FALLBACK_MAX_GATE,
                 "fallback_aux_weight": FALLBACK_AUX_WEIGHT,
+                "supcon_loss_weight": SUPCON_LOSS_WEIGHT,
+                "supcon_temperature": SUPCON_TEMPERATURE,
+                "supcon_target": SUPCON_TARGET,
                 "drop_probabilities": {
                     "imu": IMU_DROP_PROB,
                     "gesture": 0.0,
@@ -1443,6 +1496,7 @@ def main() -> None:
                 "train_consistency_loss": [float(value) for value in train_consistency_losses],
                 "train_margin_loss": [float(value) for value in train_margin_losses],
                 "train_missing_distill_loss": [float(value) for value in train_missing_distill_losses],
+                "train_supcon_loss": [float(value) for value in train_supcon_losses],
             },
             "avg_modality_gates": {
                 "validation": {
@@ -1650,6 +1704,9 @@ def main() -> None:
             "focal_loss_apply_aux": FOCAL_LOSS_APPLY_AUX,
             "fallback_max_gate": FALLBACK_MAX_GATE,
             "fallback_aux_weight": FALLBACK_AUX_WEIGHT,
+            "supcon_loss_weight": SUPCON_LOSS_WEIGHT,
+            "supcon_temperature": SUPCON_TEMPERATURE,
+            "supcon_target": SUPCON_TARGET,
             "modality_contribution_method": "shapley_values_on_masked_test_subsets",
             "drop_probabilities": {
                 "imu": IMU_DROP_PROB,
@@ -1742,6 +1799,7 @@ def main() -> None:
             "train_consistency_loss": [float(value) for value in train_consistency_losses],
             "train_margin_loss": [float(value) for value in train_margin_losses],
             "train_missing_distill_loss": [float(value) for value in train_missing_distill_losses],
+            "train_supcon_loss": [float(value) for value in train_supcon_losses],
         },
         "avg_modality_gates": {
             "validation": {

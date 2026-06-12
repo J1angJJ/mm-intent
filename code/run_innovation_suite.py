@@ -48,6 +48,22 @@ EXPERIMENTS = {
         "0.10",
         "--no-missing-distill-force-mask",
     ],
+    "supcon_joint": [
+        "--supcon-loss-weight",
+        "0.05",
+        "--supcon-temperature",
+        "0.1",
+        "--supcon-target",
+        "joint",
+    ],
+    "supcon_intent": [
+        "--supcon-loss-weight",
+        "0.05",
+        "--supcon-temperature",
+        "0.1",
+        "--supcon-target",
+        "intent",
+    ],
 }
 
 TASKS = {
