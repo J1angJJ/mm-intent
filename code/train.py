@@ -88,6 +88,20 @@ def build_env(args: argparse.Namespace) -> dict[str, str]:
         env["IMPROVED_REAL_SCENE_A2_MARGIN_INTENT_CONFUSION_WEIGHT"] = str(args.margin_intent_confusion_weight)
     if args.margin_scene_confusion_weight is not None:
         env["IMPROVED_REAL_SCENE_A2_MARGIN_SCENE_CONFUSION_WEIGHT"] = str(args.margin_scene_confusion_weight)
+    if args.missing_distill_weight is not None:
+        env["IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_WEIGHT"] = str(args.missing_distill_weight)
+    if args.missing_distill_temperature is not None:
+        env["IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_TEMPERATURE"] = str(args.missing_distill_temperature)
+    if args.missing_distill_intent_weight is not None:
+        env["IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_INTENT_WEIGHT"] = str(args.missing_distill_intent_weight)
+    if args.missing_distill_scene_weight is not None:
+        env["IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_SCENE_WEIGHT"] = str(args.missing_distill_scene_weight)
+    if args.missing_distill_modalities:
+        env["IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_MODALITIES"] = ",".join(args.missing_distill_modalities)
+    if args.missing_distill_force_mask is not None:
+        env["IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_FORCE_MASK"] = "1" if args.missing_distill_force_mask else "0"
+    for modality, value in args.missing_distill_probs:
+        env[f"IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_{modality.upper()}_PROB"] = str(value)
     if args.skip_test_eval:
         env["SMART_AR_SKIP_TEST_EVAL"] = "1"
     return env
@@ -125,8 +139,27 @@ def main() -> None:
     parser.add_argument("--margin-value", type=float)
     parser.add_argument("--margin-intent-confusion-weight", type=float)
     parser.add_argument("--margin-scene-confusion-weight", type=float)
+    parser.add_argument("--missing-distill-weight", type=float)
+    parser.add_argument("--missing-distill-temperature", type=float)
+    parser.add_argument("--missing-distill-intent-weight", type=float)
+    parser.add_argument("--missing-distill-scene-weight", type=float)
+    parser.add_argument("--missing-distill-modalities", nargs="*", default=[])
+    parser.add_argument("--missing-distill-force-mask", dest="missing_distill_force_mask", action="store_true", default=None)
+    parser.add_argument("--no-missing-distill-force-mask", dest="missing_distill_force_mask", action="store_false")
+    parser.add_argument(
+        "--missing-distill-prob",
+        nargs=2,
+        action="append",
+        metavar=("MODALITY", "PROB"),
+        default=[],
+        help="Per-modality missing distillation drop probability, e.g. --missing-distill-prob text 0.35",
+    )
     parser.add_argument("--skip-test-eval", action="store_true")
     args = parser.parse_args()
+    args.missing_distill_probs = [
+        (modality, float(value))
+        for modality, value in args.missing_distill_prob
+    ]
 
     env = build_env(args)
     if not args.skip_feature_check:

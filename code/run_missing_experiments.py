@@ -57,6 +57,20 @@ def build_command(args: argparse.Namespace, group: Sequence[str]) -> list[str]:
         command.extend(["--margin-intent-confusion-weight", str(args.margin_intent_confusion_weight)])
     if args.margin_scene_confusion_weight is not None:
         command.extend(["--margin-scene-confusion-weight", str(args.margin_scene_confusion_weight)])
+    if args.missing_distill_weight is not None:
+        command.extend(["--missing-distill-weight", str(args.missing_distill_weight)])
+    if args.missing_distill_temperature is not None:
+        command.extend(["--missing-distill-temperature", str(args.missing_distill_temperature)])
+    if args.missing_distill_intent_weight is not None:
+        command.extend(["--missing-distill-intent-weight", str(args.missing_distill_intent_weight)])
+    if args.missing_distill_scene_weight is not None:
+        command.extend(["--missing-distill-scene-weight", str(args.missing_distill_scene_weight)])
+    if args.missing_distill_modalities:
+        command.extend(["--missing-distill-modalities", *args.missing_distill_modalities])
+    if args.no_missing_distill_force_mask:
+        command.append("--no-missing-distill-force-mask")
+    for modality, probability in args.missing_distill_prob:
+        command.extend(["--missing-distill-prob", modality, str(probability)])
     return command
 
 
@@ -77,8 +91,19 @@ def main() -> None:
     parser.add_argument("--margin-value", type=float)
     parser.add_argument("--margin-intent-confusion-weight", type=float)
     parser.add_argument("--margin-scene-confusion-weight", type=float)
+    parser.add_argument("--missing-distill-weight", type=float)
+    parser.add_argument("--missing-distill-temperature", type=float)
+    parser.add_argument("--missing-distill-intent-weight", type=float)
+    parser.add_argument("--missing-distill-scene-weight", type=float)
+    parser.add_argument("--missing-distill-modalities", nargs="*", default=[])
+    parser.add_argument("--no-missing-distill-force-mask", action="store_true")
+    parser.add_argument("--missing-distill-prob", nargs=2, action="append", metavar=("MODALITY", "PROB"), default=[])
     parser.add_argument("--execute", action="store_true", help="Actually run commands. Default only prints them.")
     args = parser.parse_args()
+    args.missing_distill_prob = [
+        (modality, float(probability))
+        for modality, probability in args.missing_distill_prob
+    ]
     if args.output_model_name is None:
         args.output_model_name = args.model
 

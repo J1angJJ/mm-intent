@@ -72,6 +72,23 @@ MARGIN_LOSS_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_MARGIN_LOSS_WEIGHT"
 MARGIN_VALUE = float(os.getenv("IMPROVED_REAL_SCENE_A2_MARGIN_VALUE", "0.35"))
 MARGIN_INTENT_CONFUSION_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_MARGIN_INTENT_CONFUSION_WEIGHT", "1.0"))
 MARGIN_SCENE_CONFUSION_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_MARGIN_SCENE_CONFUSION_WEIGHT", "1.0"))
+MISSING_DISTILL_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_WEIGHT", "0.0"))
+MISSING_DISTILL_TEMPERATURE = float(os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_TEMPERATURE", "2.0"))
+MISSING_DISTILL_INTENT_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_INTENT_WEIGHT", "0.35"))
+MISSING_DISTILL_SCENE_WEIGHT = float(os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_SCENE_WEIGHT", "0.15"))
+MISSING_DISTILL_FORCE_MASK = os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_FORCE_MASK", "1") == "1"
+MISSING_DISTILL_MODALITIES = tuple(
+    item.strip()
+    for item in os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_MODALITIES", "text,scene,audio,gesture,imu").split(",")
+    if item.strip()
+)
+MISSING_DISTILL_PROBS = {
+    "imu": float(os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_IMU_PROB", "0.10")),
+    "gesture": float(os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_GESTURE_PROB", "0.10")),
+    "audio": float(os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_AUDIO_PROB", "0.15")),
+    "text": float(os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_TEXT_PROB", "0.35")),
+    "scene": float(os.getenv("IMPROVED_REAL_SCENE_A2_MISSING_DISTILL_SCENE_PROB", "0.25")),
+}
 
 MODALITY_KEYS = ("imu", "gesture", "audio", "text", "scene")
 MODALITY_DISPLAY_NAMES = base.MODALITY_DISPLAY_NAMES
@@ -489,6 +506,17 @@ def distillation_kl(student_logits: torch.Tensor, teacher_logits: torch.Tensor) 
     return F.kl_div(student_log_probs, teacher_probs, reduction="batchmean") * (temperature ** 2)
 
 
+def distillation_kl_with_temperature(
+    student_logits: torch.Tensor,
+    teacher_logits: torch.Tensor,
+    temperature: float,
+) -> torch.Tensor:
+    temperature = max(temperature, 1e-6)
+    student_log_probs = F.log_softmax(student_logits / temperature, dim=1)
+    teacher_probs = F.softmax(teacher_logits.detach() / temperature, dim=1)
+    return F.kl_div(student_log_probs, teacher_probs, reduction="batchmean") * (temperature ** 2)
+
+
 def compute_consistency_loss(
     clean_outputs: Dict[str, torch.Tensor],
     perturbed_outputs: Dict[str, torch.Tensor],
@@ -512,6 +540,79 @@ def compute_consistency_loss(
     )
 
 
+def mask_batch_for_missing_distillation(
+    batch_imu: torch.Tensor,
+    batch_gesture: torch.Tensor,
+    batch_audio: torch.Tensor,
+    batch_text: torch.Tensor,
+    batch_scene: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    tensors = {
+        "imu": batch_imu,
+        "gesture": batch_gesture,
+        "audio": batch_audio,
+        "text": batch_text,
+        "scene": batch_scene,
+    }
+    masked_tensors: Dict[str, torch.Tensor] = {}
+    masked_any = torch.zeros(batch_imu.size(0), dtype=torch.bool, device=batch_imu.device)
+
+    for key in MODALITY_KEYS:
+        tensor = tensors[key]
+        if key not in MISSING_DISTILL_MODALITIES:
+            masked_tensors[key] = tensor
+            continue
+        probability = float(np.clip(MISSING_DISTILL_PROBS.get(key, 0.0), 0.0, 1.0))
+        mask_shape = (tensor.size(0),) + (1,) * (tensor.ndim - 1)
+        drop = torch.rand(mask_shape, device=tensor.device) < probability
+        masked_any |= drop.flatten()
+        masked_tensors[key] = tensor * (~drop).to(tensor.dtype)
+
+    if MISSING_DISTILL_FORCE_MASK and not bool(masked_any.all().item()):
+        candidates = [key for key in MODALITY_KEYS if key in MISSING_DISTILL_MODALITIES]
+        if candidates:
+            unmasked_indices = torch.nonzero(~masked_any, as_tuple=False).flatten()
+            for sample_index in unmasked_indices.tolist():
+                key = candidates[int(torch.randint(len(candidates), (1,), device=batch_imu.device).item())]
+                tensor = masked_tensors[key].clone()
+                tensor[sample_index] = 0
+                masked_tensors[key] = tensor
+
+    return (
+        masked_tensors["imu"],
+        masked_tensors["gesture"],
+        masked_tensors["audio"],
+        masked_tensors["text"],
+        masked_tensors["scene"],
+    )
+
+
+def compute_missing_distillation_loss(
+    teacher_outputs: Dict[str, torch.Tensor],
+    student_outputs: Dict[str, torch.Tensor],
+) -> torch.Tensor:
+    joint_loss = distillation_kl_with_temperature(
+        student_outputs["joint_logits"],
+        teacher_outputs["joint_logits"],
+        MISSING_DISTILL_TEMPERATURE,
+    )
+    intent_loss = distillation_kl_with_temperature(
+        student_outputs["intent_logits"],
+        teacher_outputs["intent_logits"],
+        MISSING_DISTILL_TEMPERATURE,
+    )
+    scene_loss = distillation_kl_with_temperature(
+        student_outputs["scene_logits"],
+        teacher_outputs["scene_logits"],
+        MISSING_DISTILL_TEMPERATURE,
+    )
+    return (
+        joint_loss
+        + MISSING_DISTILL_INTENT_WEIGHT * intent_loss
+        + MISSING_DISTILL_SCENE_WEIGHT * scene_loss
+    )
+
+
 def train_one_epoch(
     model: nn.Module,
     loader: DataLoader,
@@ -532,6 +633,7 @@ def train_one_epoch(
         "gesture_intent_loss": 0.0,
         "consistency_loss": 0.0,
         "margin_loss": 0.0,
+        "missing_distill_loss": 0.0,
     }
 
     for batch in loader:
@@ -581,6 +683,20 @@ def train_one_epoch(
             loss_parts["margin_loss"] = float(margin_loss.item())
         else:
             loss_parts["margin_loss"] = 0.0
+        if MISSING_DISTILL_WEIGHT > 0.0:
+            masked_inputs = mask_batch_for_missing_distillation(
+                batch_imu,
+                batch_gesture,
+                batch_audio,
+                batch_text,
+                batch_scene,
+            )
+            student_outputs = model(*masked_inputs)
+            missing_distill_loss = compute_missing_distillation_loss(outputs, student_outputs)
+            loss = loss + MISSING_DISTILL_WEIGHT * missing_distill_loss
+            loss_parts["missing_distill_loss"] = float(missing_distill_loss.item())
+        else:
+            loss_parts["missing_distill_loss"] = 0.0
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), GRAD_CLIP_NORM)
         optimizer.step()
@@ -792,6 +908,12 @@ def main() -> None:
         f"intent_confusion_weight={MARGIN_INTENT_CONFUSION_WEIGHT} "
         f"scene_confusion_weight={MARGIN_SCENE_CONFUSION_WEIGHT}"
     )
+    print(
+        f"[missing_distill] weight={MISSING_DISTILL_WEIGHT} temperature={MISSING_DISTILL_TEMPERATURE} "
+        f"intent_weight={MISSING_DISTILL_INTENT_WEIGHT} scene_weight={MISSING_DISTILL_SCENE_WEIGHT} "
+        f"force_mask={int(MISSING_DISTILL_FORCE_MASK)} modalities={','.join(MISSING_DISTILL_MODALITIES)} "
+        f"probs={MISSING_DISTILL_PROBS}"
+    )
 
     print("[step] load train split with real scene")
     train_raw_features, train_raw_labels, train_raw_scene_targets, train_scene_selection = base.load_multimodal_data(
@@ -944,6 +1066,7 @@ def main() -> None:
     val_gesture_intent_losses: List[float] = []
     train_consistency_losses: List[float] = []
     train_margin_losses: List[float] = []
+    train_missing_distill_losses: List[float] = []
 
     print("[step] start training")
     for epoch in range(1, EPOCHS + 1):
@@ -979,6 +1102,7 @@ def main() -> None:
         val_gesture_intent_losses.append(float(val_metrics["gesture_intent_loss"]))
         train_consistency_losses.append(float(train_parts["consistency_loss"]))
         train_margin_losses.append(float(train_parts["margin_loss"]))
+        train_missing_distill_losses.append(float(train_parts["missing_distill_loss"]))
 
         selection_score = (
             float(val_metrics["joint_acc"])
@@ -1123,6 +1247,13 @@ def main() -> None:
                 "margin_value": MARGIN_VALUE,
                 "margin_intent_confusion_weight": MARGIN_INTENT_CONFUSION_WEIGHT,
                 "margin_scene_confusion_weight": MARGIN_SCENE_CONFUSION_WEIGHT,
+                "missing_distill_weight": MISSING_DISTILL_WEIGHT,
+                "missing_distill_temperature": MISSING_DISTILL_TEMPERATURE,
+                "missing_distill_intent_weight": MISSING_DISTILL_INTENT_WEIGHT,
+                "missing_distill_scene_weight": MISSING_DISTILL_SCENE_WEIGHT,
+                "missing_distill_force_mask": MISSING_DISTILL_FORCE_MASK,
+                "missing_distill_modalities": list(MISSING_DISTILL_MODALITIES),
+                "missing_distill_probabilities": MISSING_DISTILL_PROBS,
                 "drop_probabilities": {
                     "imu": IMU_DROP_PROB,
                     "gesture": 0.0,
@@ -1195,6 +1326,7 @@ def main() -> None:
                 "val_gesture_intent_loss": [float(value) for value in val_gesture_intent_losses],
                 "train_consistency_loss": [float(value) for value in train_consistency_losses],
                 "train_margin_loss": [float(value) for value in train_margin_losses],
+                "train_missing_distill_loss": [float(value) for value in train_missing_distill_losses],
             },
             "avg_modality_gates": {
                 "validation": {
@@ -1391,6 +1523,13 @@ def main() -> None:
             "margin_value": MARGIN_VALUE,
             "margin_intent_confusion_weight": MARGIN_INTENT_CONFUSION_WEIGHT,
             "margin_scene_confusion_weight": MARGIN_SCENE_CONFUSION_WEIGHT,
+            "missing_distill_weight": MISSING_DISTILL_WEIGHT,
+            "missing_distill_temperature": MISSING_DISTILL_TEMPERATURE,
+            "missing_distill_intent_weight": MISSING_DISTILL_INTENT_WEIGHT,
+            "missing_distill_scene_weight": MISSING_DISTILL_SCENE_WEIGHT,
+            "missing_distill_force_mask": MISSING_DISTILL_FORCE_MASK,
+            "missing_distill_modalities": list(MISSING_DISTILL_MODALITIES),
+            "missing_distill_probabilities": MISSING_DISTILL_PROBS,
             "modality_contribution_method": "shapley_values_on_masked_test_subsets",
             "drop_probabilities": {
                 "imu": IMU_DROP_PROB,
@@ -1478,6 +1617,7 @@ def main() -> None:
             "val_gesture_intent_loss": [float(value) for value in val_gesture_intent_losses],
             "train_consistency_loss": [float(value) for value in train_consistency_losses],
             "train_margin_loss": [float(value) for value in train_margin_losses],
+            "train_missing_distill_loss": [float(value) for value in train_missing_distill_losses],
         },
         "avg_modality_gates": {
             "validation": {
