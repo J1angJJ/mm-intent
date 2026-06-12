@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
-from project_paths import CLIP_MODEL_NAME_OR_PATH, FISHEYE_DIR, PROCESSED_DATA_DIR, configure_hf_cache
+from project_paths import CLIP_MODEL_NAME_OR_PATH, FISHEYE_DIR, PROCESSED_DATA_DIR, PROJECT_ROOT, configure_hf_cache
 
 configure_hf_cache()
 
@@ -26,6 +26,10 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(METADATA_OUTPUT_DIR, exist_ok=True)
 
 CLIP_MODEL_PATH = CLIP_MODEL_NAME_OR_PATH
+HAND_TASK_MODEL_PATH = os.getenv(
+    "MM_INTENT_HAND_LANDMARKER_TASK",
+    str(PROJECT_ROOT / "models" / "hand_landmarker.task"),
+)
 
 # 序列采样配置
 SEQ_LEN = 10                 # 提取 10 帧
@@ -84,19 +88,39 @@ AVI_TO_MP4_MAP = {
 }
 
 # ==================== 2. 模型加载 (针对 4090 优化) ====================
-try:
-    mp_hands = mp.solutions.hands
-except AttributeError:
-    try:
-        from mediapipe.python.solutions import hands as mp_hands
-    except ModuleNotFoundError:
-        mp_hands = None
+hand_landmarker = None
+legacy_hands = None
 
-if mp_hands is None:
-    print("⚠️ [MediaPipe] 当前版本不提供 legacy Hands API，将使用整帧 CLIP 特征作为手势 fallback")
-    hands = None
-else:
-    hands = mp_hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.3)
+if Path(HAND_TASK_MODEL_PATH).exists():
+    try:
+        BaseOptions = mp.tasks.BaseOptions
+        HandLandmarker = mp.tasks.vision.HandLandmarker
+        HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
+        task_options = HandLandmarkerOptions(
+            base_options=BaseOptions(model_asset_path=HAND_TASK_MODEL_PATH),
+            running_mode=mp.tasks.vision.RunningMode.IMAGE,
+            num_hands=2,
+            min_hand_detection_confidence=0.3,
+        )
+        hand_landmarker = HandLandmarker.create_from_options(task_options)
+        print(f"✅ [MediaPipe Tasks] 使用 HandLandmarker: {HAND_TASK_MODEL_PATH}")
+    except Exception as exc:
+        print(f"⚠️ [MediaPipe Tasks] HandLandmarker 初始化失败，将尝试 legacy/fallback: {exc}")
+
+if hand_landmarker is None:
+    try:
+        mp_hands = mp.solutions.hands
+    except AttributeError:
+        try:
+            from mediapipe.python.solutions import hands as mp_hands
+        except ModuleNotFoundError:
+            mp_hands = None
+
+    if mp_hands is None:
+        print("⚠️ [MediaPipe] 当前版本不提供 legacy Hands API，且未找到 Tasks 模型，将使用整帧 CLIP 特征作为手势 fallback")
+    else:
+        legacy_hands = mp_hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.3)
+        print("✅ [MediaPipe legacy] 使用 mp.solutions.hands")
 
 # 如果你只有单显卡，请尝试改为 cuda:0
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -109,24 +133,50 @@ clip_vision = CLIPVisionModel.from_pretrained(clip_source, local_files_only=clip
 
 # ==================== 3. 核心处理函数 ====================
 
-def crop_hand(img_pil):
-    """ MediaPipe 裁剪逻辑 (保持 40% Padding) """
-    if hands is None:
-        return img_pil.resize((224, 224), Image.LANCZOS)
-
-    img_np = np.array(img_pil)
+def crop_with_landmarks(img_pil, hand_landmarks):
+    img_np = np.array(img_pil.convert("RGB"))
     h, w = img_np.shape[:2]
-    img_rgb = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
-    results = hands.process(img_rgb)
+    xs = [int(lm.x * w) for hand in hand_landmarks for lm in hand]
+    ys = [int(lm.y * h) for hand in hand_landmarks for lm in hand]
+    x1, y1, x2, y2 = max(0, min(xs)), max(0, min(ys)), min(w, max(xs)), min(h, max(ys))
+    cw, ch = x2 - x1, y2 - y1
+    if cw <= 1 or ch <= 1:
+        return img_pil.resize((224, 224), Image.LANCZOS)
+    pad = 0.4
+    x1, y1 = max(0, int(x1 - cw * pad)), max(0, int(y1 - ch * pad))
+    x2, y2 = min(w, int(x2 + cw * pad)), min(h, int(y2 + ch * pad))
+    return img_pil.crop((x1, y1, x2, y2)).resize((224, 224), Image.LANCZOS)
+
+
+def crop_hand_tasks(img_pil, timestamp_ms):
+    if hand_landmarker is None:
+        return None
+    img_rgb = np.array(img_pil.convert("RGB"))
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=img_rgb)
+    results = hand_landmarker.detect(mp_image)
+    if results.hand_landmarks:
+        return crop_with_landmarks(img_pil, results.hand_landmarks)
+    return None
+
+
+def crop_hand_legacy(img_pil):
+    if legacy_hands is None:
+        return None
+    img_rgb = np.array(img_pil.convert("RGB"))
+    results = legacy_hands.process(img_rgb)
     if results.multi_hand_landmarks:
-        xs = [int(lm.x * w) for hand in results.multi_hand_landmarks for lm in hand.landmark]
-        ys = [int(lm.y * h) for hand in results.multi_hand_landmarks for lm in hand.landmark]
-        x1, y1, x2, y2 = max(0, min(xs)), max(0, min(ys)), min(w, max(xs)), min(h, max(ys))
-        cw, ch = x2 - x1, y2 - y1
-        pad = 0.4
-        x1, y1 = max(0, int(x1 - cw * pad)), max(0, int(y1 - ch * pad))
-        x2, y2 = min(w, int(x2 + cw * pad)), min(h, int(y2 + ch * pad))
-        return img_pil.crop((x1, y1, x2, y2)).resize((224, 224), Image.LANCZOS)
+        return crop_with_landmarks(img_pil, [hand.landmark for hand in results.multi_hand_landmarks])
+    return None
+
+
+def crop_hand(img_pil, timestamp_ms):
+    """ MediaPipe 裁剪逻辑 (保持 40% Padding) """
+    hand_box = crop_hand_tasks(img_pil, timestamp_ms)
+    if hand_box is not None:
+        return hand_box
+    hand_box = crop_hand_legacy(img_pil)
+    if hand_box is not None:
+        return hand_box
     return img_pil.rotate(0).resize((224, 224), Image.LANCZOS)
 
 @torch.no_grad()
@@ -154,7 +204,7 @@ def extract_clip_sequence(video_path, center_ms):
         
         # 预处理与特征提取
         img_pil = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        hand_box = crop_hand(img_pil)
+        hand_box = crop_hand(img_pil, msec)
         
         inputs = clip_processor(images=hand_box.convert("RGB"), return_tensors="pt").to(device)
         outputs = clip_vision(**inputs)

@@ -27,6 +27,8 @@
 ### 2. 特征提取代码，位于feature_extraction文件夹
 - `get_timestamp.py`：提取时间戳
 - `strong_gesture2.0.py`：提取手势特征
+  - 优先使用 MediaPipe Tasks `HandLandmarker` 新接口，模型路径默认为 `models/hand_landmarker.task`，也可通过 `MM_INTENT_HAND_LANDMARKER_TASK` 指定。
+  - 若未提供 `.task` 模型，会尝试 legacy `mp.solutions.hands`；两者都不可用时退化为整帧 CLIP 特征。
 - `mfcc.py`：提取音频特征
 - `ASR.py`：语音转文本特征
 - `imu.py`：提取IMU特征
