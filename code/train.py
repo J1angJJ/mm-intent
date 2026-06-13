@@ -59,6 +59,14 @@ def build_env(args: argparse.Namespace) -> dict[str, str]:
         env["SMART_AR_TEST_VIDEO_NAMES"] = ",".join(args.test_video_names)
     if args.output_dir:
         env["SMART_AR_MODEL_OUTPUT_DIR"] = str(Path(args.output_dir).resolve())
+    if args.gesture_feature_dir:
+        env["MM_INTENT_GESTURE_FEATURE_DIR"] = str(Path(args.gesture_feature_dir).resolve())
+    if args.audio_feature_dir:
+        env["MM_INTENT_AUDIO_FEATURE_DIR"] = str(Path(args.audio_feature_dir).resolve())
+    if args.text_feature_dir:
+        env["MM_INTENT_TEXT_FEATURE_DIR"] = str(Path(args.text_feature_dir).resolve())
+    if args.imu_feature_dir:
+        env["MM_INTENT_IMU_FEATURE_DIR"] = str(Path(args.imu_feature_dir).resolve())
     if args.epochs is not None:
         env["BASELINE_SCENE_EPOCHS"] = str(args.epochs)
         env["IMPROVED_REAL_SCENE_A2_EPOCHS"] = str(args.epochs)
@@ -141,6 +149,10 @@ def main() -> None:
     parser.add_argument("--val-split", type=float)
     parser.add_argument("--test-video-names", nargs="*", default=[])
     parser.add_argument("--output-dir")
+    parser.add_argument("--gesture-feature-dir")
+    parser.add_argument("--audio-feature-dir")
+    parser.add_argument("--text-feature-dir")
+    parser.add_argument("--imu-feature-dir")
     parser.add_argument("--missing-modalities", nargs="*", default=[])
     parser.add_argument("--noise-modality", choices=("imu", "gesture", "audio", "text", "scene"))
     parser.add_argument("--noise-level", type=float, default=0.0)

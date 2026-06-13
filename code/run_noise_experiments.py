@@ -32,6 +32,14 @@ def build_command(args: argparse.Namespace, modality: str, level: float) -> list
     ]
     if args.skip_test_eval:
         command.append("--skip-test-eval")
+    if args.text_feature_dir:
+        command.extend(["--text-feature-dir", args.text_feature_dir])
+    if args.gesture_feature_dir:
+        command.extend(["--gesture-feature-dir", args.gesture_feature_dir])
+    if args.audio_feature_dir:
+        command.extend(["--audio-feature-dir", args.audio_feature_dir])
+    if args.imu_feature_dir:
+        command.extend(["--imu-feature-dir", args.imu_feature_dir])
     if args.consistency_weight is not None:
         command.extend(["--consistency-weight", str(args.consistency_weight)])
     if args.consistency_mask_prob is not None:
@@ -88,6 +96,10 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--patience", type=int, default=5)
     parser.add_argument("--skip-test-eval", action="store_true")
+    parser.add_argument("--text-feature-dir")
+    parser.add_argument("--gesture-feature-dir")
+    parser.add_argument("--audio-feature-dir")
+    parser.add_argument("--imu-feature-dir")
     parser.add_argument("--consistency-weight", type=float)
     parser.add_argument("--consistency-mask-prob", type=float)
     parser.add_argument("--consistency-noise-std", type=float)

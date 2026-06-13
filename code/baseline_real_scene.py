@@ -55,10 +55,18 @@ MODEL_OUTPUT_DIR = Path(
 )
 MODEL_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-STRONG_GESTURE_DIR = PROCESSED_DATA_DIR / "strong_gesture_features"
-AUDIO_FEAT_DIR = PROCESSED_DATA_DIR / "audio_features"
-TEXT_FEAT_DIR = PROCESSED_DATA_DIR / "text_features"
-IMU_FEAT_DIR = PROCESSED_DATA_DIR / "imu_features"
+STRONG_GESTURE_DIR = Path(
+    os.getenv("MM_INTENT_GESTURE_FEATURE_DIR", str(PROCESSED_DATA_DIR / "strong_gesture_features"))
+).resolve()
+AUDIO_FEAT_DIR = Path(
+    os.getenv("MM_INTENT_AUDIO_FEATURE_DIR", str(PROCESSED_DATA_DIR / "audio_features"))
+).resolve()
+TEXT_FEAT_DIR = Path(
+    os.getenv("MM_INTENT_TEXT_FEATURE_DIR", str(PROCESSED_DATA_DIR / "text_features"))
+).resolve()
+IMU_FEAT_DIR = Path(
+    os.getenv("MM_INTENT_IMU_FEATURE_DIR", str(PROCESSED_DATA_DIR / "imu_features"))
+).resolve()
 LOCAL_VIT_PATH = Path(VIT_MODEL_NAME_OR_PATH)
 SCENE_DIRS = {
     "museum": ROOT_DIR / "scene_images" / "museum",
