@@ -40,6 +40,14 @@ def build_command(args: argparse.Namespace, modality: str, level: float) -> list
         command.extend(["--audio-feature-dir", args.audio_feature_dir])
     if args.imu_feature_dir:
         command.extend(["--imu-feature-dir", args.imu_feature_dir])
+    if args.gesture_feature_dim is not None:
+        command.extend(["--gesture-feature-dim", str(args.gesture_feature_dim)])
+    if args.audio_feature_dim is not None:
+        command.extend(["--audio-feature-dim", str(args.audio_feature_dim)])
+    if args.text_feature_dim is not None:
+        command.extend(["--text-feature-dim", str(args.text_feature_dim)])
+    if args.imu_feature_dim is not None:
+        command.extend(["--imu-feature-dim", str(args.imu_feature_dim)])
     if args.consistency_weight is not None:
         command.extend(["--consistency-weight", str(args.consistency_weight)])
     if args.consistency_mask_prob is not None:
@@ -100,6 +108,10 @@ def main() -> None:
     parser.add_argument("--gesture-feature-dir")
     parser.add_argument("--audio-feature-dir")
     parser.add_argument("--imu-feature-dir")
+    parser.add_argument("--gesture-feature-dim", type=int)
+    parser.add_argument("--audio-feature-dim", type=int)
+    parser.add_argument("--text-feature-dim", type=int)
+    parser.add_argument("--imu-feature-dim", type=int)
     parser.add_argument("--consistency-weight", type=float)
     parser.add_argument("--consistency-mask-prob", type=float)
     parser.add_argument("--consistency-noise-std", type=float)

@@ -67,6 +67,14 @@ def build_env(args: argparse.Namespace) -> dict[str, str]:
         env["MM_INTENT_TEXT_FEATURE_DIR"] = str(Path(args.text_feature_dir).resolve())
     if args.imu_feature_dir:
         env["MM_INTENT_IMU_FEATURE_DIR"] = str(Path(args.imu_feature_dir).resolve())
+    if args.gesture_feature_dim is not None:
+        env["MM_INTENT_GESTURE_FEAT_DIM"] = str(args.gesture_feature_dim)
+    if args.audio_feature_dim is not None:
+        env["MM_INTENT_AUDIO_FEAT_DIM"] = str(args.audio_feature_dim)
+    if args.text_feature_dim is not None:
+        env["MM_INTENT_TEXT_FEAT_DIM"] = str(args.text_feature_dim)
+    if args.imu_feature_dim is not None:
+        env["MM_INTENT_IMU_FEAT_DIM"] = str(args.imu_feature_dim)
     if args.epochs is not None:
         env["BASELINE_SCENE_EPOCHS"] = str(args.epochs)
         env["IMPROVED_REAL_SCENE_A2_EPOCHS"] = str(args.epochs)
@@ -153,6 +161,10 @@ def main() -> None:
     parser.add_argument("--audio-feature-dir")
     parser.add_argument("--text-feature-dir")
     parser.add_argument("--imu-feature-dir")
+    parser.add_argument("--gesture-feature-dim", type=int)
+    parser.add_argument("--audio-feature-dim", type=int)
+    parser.add_argument("--text-feature-dim", type=int)
+    parser.add_argument("--imu-feature-dim", type=int)
     parser.add_argument("--missing-modalities", nargs="*", default=[])
     parser.add_argument("--noise-modality", choices=("imu", "gesture", "audio", "text", "scene"))
     parser.add_argument("--noise-level", type=float, default=0.0)
