@@ -32,6 +32,8 @@ def build_command(args: argparse.Namespace, modality: str, level: float) -> list
     ]
     if args.skip_test_eval:
         command.append("--skip-test-eval")
+    if args.skip_feature_check:
+        command.append("--skip-feature-check")
     if args.text_feature_dir:
         command.extend(["--text-feature-dir", args.text_feature_dir])
     if args.gesture_feature_dir:
@@ -104,6 +106,7 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--patience", type=int, default=5)
     parser.add_argument("--skip-test-eval", action="store_true")
+    parser.add_argument("--skip-feature-check", action="store_true")
     parser.add_argument("--text-feature-dir")
     parser.add_argument("--gesture-feature-dir")
     parser.add_argument("--audio-feature-dir")
