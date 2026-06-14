@@ -84,7 +84,7 @@ code/feature_extraction/extract_hand_geometry_features.py
 
 ### 主结果
 
-![主结果对比](docs/figures/hand_geometry_robustness_main.png)
+![主结果对比](docs/figures/main_results_hand_geometry.png)
 
 | 模型 / 特征 | joint_acc | intent_acc | scene_acc |
 |---|---:|---:|---:|
