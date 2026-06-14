@@ -14,6 +14,17 @@ from project_paths import MODEL_OUTPUT_ROOT, PROJECT_ROOT
 MetricRow = dict[str, str | float]
 
 
+DISPLAY_NAMES = {
+    "baseline": "Baseline",
+    "improved": "Improved baseline",
+    "hand_geometry": "Ours: Hand geometry",
+}
+
+
+def display_name(model_name: str) -> str:
+    return DISPLAY_NAMES.get(model_name, model_name)
+
+
 def load_metric(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -97,7 +108,7 @@ def plot_suite(rows: list[MetricRow], suite: str, output_path: Path) -> None:
         for experiment in experiments:
             values.append(float(by_exp.get(experiment, {}).get("joint_acc", 0.0)))
         offsets = [x + (idx - (len(models) - 1) / 2) * width for x in x_positions]
-        ax.bar(offsets, values, width=width, label=model)
+        ax.bar(offsets, values, width=width, label=display_name(model))
 
     ax.set_title(f"{suite.title()} robustness (joint accuracy)")
     ax.set_ylabel("Joint accuracy")
