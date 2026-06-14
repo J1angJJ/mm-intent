@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+
+ROOT = Path(__file__).resolve().parents[2]
+CODE_DIR = ROOT / "code"
+if str(CODE_DIR) not in sys.path:
+    sys.path.append(str(CODE_DIR))
 
 from project_paths import PROCESSED_DATA_DIR
 
