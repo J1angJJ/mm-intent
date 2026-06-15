@@ -15,9 +15,9 @@ MetricRow = dict[str, str | float]
 
 
 DISPLAY_NAMES = {
-    "baseline": "Baseline",
-    "improved": "Improved baseline",
-    "hand_geometry": "Ours: Hand geometry",
+    "baseline": "Given Baseline",
+    "improved": "Given Improved Baseline",
+    "hand_geometry": "Ours: Hand Geometry",
 }
 
 
@@ -110,7 +110,8 @@ def plot_suite(rows: list[MetricRow], suite: str, output_path: Path) -> None:
         offsets = [x + (idx - (len(models) - 1) / 2) * width for x in x_positions]
         ax.bar(offsets, values, width=width, label=display_name(model))
 
-    ax.set_title(f"{suite.title()} robustness (joint accuracy)")
+    protocol = "retrained under perturbation" if suite in {"missing", "noise"} else "joint accuracy"
+    ax.set_title(f"{suite.title()} robustness ({protocol})")
     ax.set_ylabel("Joint accuracy")
     ax.set_ylim(0.0, 1.02)
     ax.set_xticks(x_positions)

@@ -2,7 +2,7 @@
 
 本项目面向 AR 眼镜交互场景，研究如何利用多源传感器数据识别用户交互意图。任务输入包含 IMU、手势视频、音频、ASR 文本和场景视觉五类模态，输出为 6 类意图与 2 类场景组合而成的 12 类联合标签。
 
-项目在课程给定 baseline / improved baseline 的基础上，完成了全量数据处理、特征提取、训练评估、模态缺失与噪声鲁棒性分析，并进一步引入基于 MediaPipe hand landmarks 的手部几何时序特征。该特征在主测试集和文本缺失条件下均带来了明显提升，是当前最稳定的改进方向。
+项目在 Given Baseline / Given Improved Baseline 的基础上，完成了全量数据处理、特征提取、训练评估、模态缺失与噪声鲁棒性分析，并进一步引入基于 MediaPipe hand landmarks 的手部几何时序特征。该特征在主测试集和文本缺失条件下均带来了明显提升，是当前最稳定的改进方向。
 
 ## 任务定义
 
@@ -46,13 +46,13 @@ office, museum
 
 ## 方法概览
 
-### 给定 baseline
+### Given Baseline
 
 课程给定程序包含基础多模态分类流程：对各模态分别提取特征，按交互片段对齐后送入多模态融合网络，完成 12 类联合分类。其中手势模态本身已经使用 MediaPipe hands/HandLandmarker 定位手部区域，再对手部裁剪图提取 CLIP 视觉特征；当本地 MediaPipe 版本不兼容或模型文件缺失时，代码才会退化为整帧 CLIP fallback。
 
-### Improved baseline
+### Given Improved Baseline
 
-给定 improved baseline 在 baseline 上加入了更强的融合结构：
+Given Improved Baseline 在 Given Baseline 上加入了更强的融合结构：
 
 - 以 Gesture / Text / Scene 作为主锚点进行融合。
 - 通过 Perceiver-style latent tokens 汇聚多模态信息。
@@ -62,7 +62,7 @@ office, museum
 
 该模型在完整测试集上已经达到较高准确率，但诊断显示它对文本语义依赖较强：当 Text 模态缺失时，性能下降明显。
 
-### 手部几何特征
+### Ours: Hand Geometry
 
 为降低模型对 ASR 文本的依赖，项目新增了基于 MediaPipe hand landmarks 的显式手部几何时序特征：
 
@@ -78,21 +78,36 @@ code/feature_extraction/extract_hand_geometry_features.py
 - 拇指与其他指尖的 pinch 距离。
 - 掌宽、手高等尺度归一化几何量。
 
-与给定流程中的“MediaPipe 手部裁剪 + CLIP 视觉编码”相比，hand geometry 不再把 landmarks 只作为裁剪依据，而是直接把关键点相对位置、尺度和指尖关系作为时序输入。因此它更关注动作轨迹和手形结构，尤其适合区分 `brush`、`magnify`、`select` 等细粒度交互动作。
+与给定流程中的“MediaPipe 手部裁剪 + CLIP 视觉编码”相比，Hand Geometry 不再把 landmarks 只作为裁剪依据，而是直接把关键点相对位置、尺度和指尖关系作为时序输入。因此它更关注动作轨迹和手形结构，尤其适合区分 `brush`、`magnify`、`select` 等细粒度交互动作。
+
+### Ours: Factorized Heads
+
+为恢复 Hand Geometry 在显式 Scene 模态缺失时的场景判别能力，进一步采用分头晚期融合：
+
+```text
+Hand Geometry checkpoint  -> intent logits
+Given Improved Baseline   -> scene logits
+joint logits = intent logits + scene logits
+```
+
+该方法不在输入层拼接两种手势特征，而是让几何分支负责动作意图，让原 MediaPipe-cropped CLIP 分支提供场景上下文。它是针对显式 Scene 缺失的扩展方法，主方法仍为单模型 Hand Geometry。
 
 ## 实验结果
 
 ### 主结果
 
-![主结果对比](docs/figures/main_results_hand_geometry.png)
+![主结果对比](docs/figures/main_results_methods.png)
 
 | 模型 / 特征 | joint_acc | intent_acc | scene_acc |
 |---|---:|---:|---:|
-| Baseline + MediaPipe Tasks | 0.9516 | 0.9637 | 0.9879 |
-| Improved baseline | 0.9839 | 0.9839 | 1.0000 |
-| Ours: Hand geometry | **0.9946** | **0.9946** | **1.0000** |
+| Given Baseline | 0.9516 | 0.9637 | 0.9879 |
+| Given Improved Baseline | 0.9839 | 0.9839 | 1.0000 |
+| Ours: Hand Geometry | **0.9946** | **0.9946** | **1.0000** |
+| Ours: Factorized Heads | **0.9946** | **0.9946** | **1.0000** |
 
-Ours: Hand geometry 在主测试集上只错 4 个样本，12 类联合分类准确率达到 `0.9946`。
+Ours: Hand Geometry 在主测试集上只错 4 个样本，12 类联合分类准确率达到 `0.9946`。Factorized Heads 保持相同完整模态性能，主要收益体现在显式 Scene 模态缺失场景。
+
+![方法定位](docs/figures/method_positioning.png)
 
 ![Hand Geometry 混淆矩阵](docs/figures/hand_geometry_confusion_matrix.png)
 
@@ -102,7 +117,7 @@ Ours: Hand geometry 在主测试集上只错 4 个样本，12 类联合分类准
 
 ![模态缺失鲁棒性](docs/figures/hand_geometry_robustness_missing.png)
 
-| 缺失设置 | Improved baseline | Ours: Hand geometry | 变化 |
+| 缺失设置 | Given Improved Baseline | Ours: Hand Geometry | 变化 |
 |---|---:|---:|---:|
 | no_text | 0.4933 | **0.7675** | +0.2742 |
 | no_audio_text | 0.3723 | **0.7473** | +0.3750 |
@@ -110,15 +125,15 @@ Ours: Hand geometry 在主测试集上只错 4 个样本，12 类联合分类准
 | no_gesture_text | 0.5672 | **0.6465** | +0.0793 |
 | no_scene | **0.9785** | 0.8293 | -0.1492 |
 
-结果说明：hand geometry 显著增强了文本缺失条件下的意图识别能力。即使没有 ASR 文本，模型仍能从手部轨迹中恢复大量动作信息。
+结果说明：Hand Geometry 显著增强了文本缺失条件下的意图识别能力。即使没有 ASR 文本，模型仍能从手部轨迹中恢复大量动作信息。
 
-需要注意的是，hand geometry 对 `no_scene` 条件不占优。该设置下 intent 准确率仍有 `0.9933`，但 scene 准确率下降到 `0.8333`，导致 joint 准确率降低。这说明手部几何主要增强动作意图，不替代场景识别。
+需要注意的是，Hand Geometry 对 `no_scene` 条件不占优。该设置下 intent 准确率仍有 `0.9933`，但 scene 准确率下降到 `0.8333`，导致 joint 准确率降低。这说明手部几何主要增强动作意图，不替代场景识别。
 
 ### 噪声鲁棒性
 
 ![噪声鲁棒性](docs/figures/hand_geometry_robustness_noise.png)
 
-| 噪声设置 | Improved baseline | Ours: Hand geometry |
+| 噪声设置 | Given Improved Baseline | Ours: Hand Geometry |
 |---|---:|---:|
 | gesture_noise_60 | **0.9879** | 0.9772 |
 | text_noise_60 | 0.9718 | **0.9946** |
@@ -126,20 +141,20 @@ Ours: Hand geometry 在主测试集上只错 4 个样本，12 类联合分类准
 | imu_noise_60 | 0.9839 | **0.9946** |
 | scene_noise_60 | 0.9839 | **0.9933** |
 
-Ours: Hand geometry 在大多数噪声设置下保持在 `0.99` 左右。文本高噪声下仍能保持主结果水平，进一步说明动作几何特征缓解了模型对文本模态的依赖。
+Ours: Hand Geometry 在大多数噪声设置下保持在 `0.99` 左右。文本高噪声下仍能保持主结果水平，进一步说明动作几何特征缓解了模型对文本模态的依赖。
 
 ### 泛化分析
 
 ![泛化分析](docs/figures/factorized_generalization.png)
 
-| 泛化设置 | Improved baseline | Ours: Hand geometry | Ours: Factorized heads | Factorized no explicit scene |
+| 泛化设置 | Given Improved Baseline | Ours: Hand Geometry | Ours: Factorized Heads | Factorized Heads (No Explicit Scene) |
 |---|---:|---:|---:|---:|
 | 3-seed mean | 0.9615 | 0.9901 | **0.9906** | 0.9875 |
 | 4-date holdout mean | 0.9550 | **0.9746** | 0.9740 | 0.9620 |
 
-随机种子和按采集日期整批留出的结果表明，hand geometry 的提升不只存在于默认 seed 42。日期留出中最困难的 `2026-01-31` 组 joint accuracy 为 `0.9387`，说明模型仍受采集批次、动作表现和文本分布变化影响。
+随机种子和按采集日期整批留出的结果表明，Hand Geometry 的提升不只存在于默认 seed 42。日期留出中最困难的 `2026-01-31` 组 joint accuracy 为 `0.9387`，说明模型仍受采集批次、动作表现和文本分布变化影响。
 
-Factorized heads 使用 hand geometry checkpoint 的 intent head 和 improved baseline 的 scene head。它在不降低完整模态主结果的情况下，将默认 split 的 `no_scene` joint accuracy 恢复到 `0.9933`。这里的 `no_scene` 指移除显式 ViT scene feature；MediaPipe 裁剪后的 CLIP gesture 仍可能保留部分背景信息，因此该结果应解释为“显式 Scene 模态缺失鲁棒性”，而不是完全无场景视觉输入。
+Ours: Factorized Heads 使用 Hand Geometry checkpoint 的 intent head 和 Given Improved Baseline 的 scene head。它在不降低完整模态主结果的情况下，将默认 split 的 `no_scene` joint accuracy 恢复到 `0.9933`。这里的 `no_scene` 指移除显式 ViT scene feature；MediaPipe 裁剪后的 CLIP gesture 仍可能保留部分背景信息，因此该结果应解释为“显式 Scene 模态缺失鲁棒性”，而不是完全无场景视觉输入。
 
 此外，前述模态缺失和噪声表格中的模型是在对应扰动条件下重新训练的。使用干净 checkpoint 直接面对测试时突发文本噪声时性能仍会明显下降，说明任意 test-time OOD 鲁棒性仍是后续工作。
 
@@ -150,11 +165,12 @@ Factorized heads 使用 hand geometry checkpoint 的 intent head 和 improved ba
 | 尝试 | 结论 |
 |---|---|
 | Hierarchical Margin Loss | 可作为辅助探索，但提升不稳定 |
-| Focal Loss / Missing Modality Distillation | 未稳定超过 improved baseline |
+| Focal Loss / Missing Modality Distillation | 未稳定超过 Given Improved Baseline |
 | Supervised Contrastive Loss / Prototype 分类 / Ensemble | 整体收益有限 |
 | ASR 文本模板增强 | 降低主任务准确率，可能稀释语义空间 |
-| MediaPipe-cropped CLIP gesture + hand geometry 早期拼接 | 主任务降至 0.9704，不如纯 hand geometry |
-| Ours: Hand geometry 替换 gesture 特征 | 当前最有效，主任务 0.9946，文本缺失鲁棒性明显提升 |
+| MediaPipe-cropped CLIP gesture + Hand Geometry 早期拼接 | 主任务降至 0.9704，不如纯 Hand Geometry |
+| Ours: Hand Geometry 替换 gesture 特征 | 当前最有效，主任务 0.9946，文本缺失鲁棒性明显提升 |
+| Ours: Factorized Heads | 保持完整模态性能，并恢复显式 Scene 缺失下的场景判别 |
 
 这些结果表明，在当前数据集上继续堆叠融合头或损失函数的收益有限；更有效的方向是改进动作本身的表示，使模型获得更直接的手部轨迹证据。
 
@@ -171,6 +187,7 @@ code/
   run_gesture_geometry_suite.py          # hand geometry 一键实验
   run_gesture_fusion_suite.py            # CLIP + geometry 拼接实验
   summarize_robustness_results.py        # 鲁棒性结果汇总与可视化
+  visualize_method_comparison.py         # 方法主结果、定位与泛化可视化
   feature_extraction/
     get_timestamp.py
     strong_gesture2.0.py
@@ -185,6 +202,9 @@ docs/figures/
   hand_geometry_robustness_noise.png
   hand_geometry_confusion_matrix.png
   hand_geometry_loss_curve.png
+  main_results_methods.png
+  method_positioning.png
+  factorized_generalization.png
 ```
 
 ## 复现实验
