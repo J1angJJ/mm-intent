@@ -42,6 +42,8 @@ def collect_logits(
     gesture_dir: Path,
     gesture_dim: int,
     missing_modalities: tuple[str, ...],
+    noise_modality: str,
+    noise_level: float,
     batch_size: int,
 ):
     import torch
@@ -52,8 +54,8 @@ def collect_logits(
     base.STRONG_GESTURE_DIR = gesture_dir
     base.GESTURE_FEAT_DIM = gesture_dim
     base.MISSING_MODALITIES = missing_modalities
-    base.NOISE_MODALITY = ""
-    base.NOISE_LEVEL = 0.0
+    base.NOISE_MODALITY = noise_modality
+    base.NOISE_LEVEL = noise_level
 
     with (output_dir / "label_encoder.pkl").open("rb") as file:
         label_encoder = pickle.load(file)
@@ -201,12 +203,20 @@ def main() -> None:
     parser.add_argument("--intent-weights", nargs="+", type=float, default=[0.75, 1.0, 1.25])
     parser.add_argument("--scene-weights", nargs="+", type=float, default=[0.5, 0.75, 1.0, 1.25])
     parser.add_argument("--scenarios", nargs="+", choices=("full", "no_scene"), default=["full", "no_scene"])
+    parser.add_argument("--scenario-name")
+    parser.add_argument("--missing-modalities", nargs="*", default=[])
+    parser.add_argument("--noise-modality", choices=("", "imu", "gesture", "audio", "text", "scene"), default="")
+    parser.add_argument("--noise-level", type=float, default=0.0)
+    parser.add_argument("--test-video-names", nargs="*", default=[])
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument(
         "--analysis-dir",
         default=str(MODEL_OUTPUT_ROOT / "factorized_head_fusion"),
     )
     args = parser.parse_args()
+
+    if args.test_video_names:
+        os.environ["SMART_AR_TEST_VIDEO_NAMES"] = ",".join(args.test_video_names)
 
     geometry_output_dir = Path(args.geometry_output_dir).resolve()
     scene_output_dir = Path(args.scene_output_dir).resolve()
@@ -215,14 +225,30 @@ def main() -> None:
     configure_from_metrics(geometry_output_dir)
 
     all_rows: list[dict[str, object]] = []
-    for scenario in args.scenarios:
-        missing = ("scene",) if scenario == "no_scene" else ()
+    scenario_specs: list[tuple[str, tuple[str, ...], str, float]] = []
+    if args.scenario_name:
+        scenario_specs.append(
+            (
+                args.scenario_name,
+                tuple(args.missing_modalities),
+                args.noise_modality,
+                args.noise_level,
+            )
+        )
+    else:
+        for scenario in args.scenarios:
+            missing = ("scene",) if scenario == "no_scene" else ()
+            scenario_specs.append((scenario, missing, "", 0.0))
+
+    for scenario, missing, noise_modality, noise_level in scenario_specs:
         print(f"[scenario] {scenario}")
         geometry = collect_logits(
             geometry_output_dir,
             Path(args.geometry_feature_dir).resolve(),
             args.geometry_feature_dim,
             missing,
+            noise_modality,
+            noise_level,
             args.batch_size,
         )
         scene_model = collect_logits(
@@ -230,6 +256,8 @@ def main() -> None:
             Path(args.scene_gesture_feature_dir).resolve(),
             args.scene_gesture_feature_dim,
             missing,
+            noise_modality,
+            noise_level,
             args.batch_size,
         )
         rows = evaluate_scenario(
@@ -260,7 +288,7 @@ def main() -> None:
                 (row for row in all_rows if row["scenario"] == scenario),
                 key=lambda row: float(row["joint_acc"]),
             )
-            for scenario in args.scenarios
+            for scenario, *_ in scenario_specs
         },
     }
     (analysis_dir / "factorized_head_fusion.json").write_text(

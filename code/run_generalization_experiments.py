@@ -56,6 +56,9 @@ def run_experiment(
     test_video_names: list[str],
     execute: bool,
     skip_existing: bool,
+    output_model_name: str,
+    gesture_feature_dir: str | None,
+    gesture_feature_dim: int | None,
 ) -> None:
     output_dir = PROJECT_ROOT / "outputs" / "generalization" / name
     metrics_path = output_dir / "metrics.json"
@@ -83,6 +86,10 @@ def run_experiment(
         str(output_dir),
         "--skip-feature-check",
     ]
+    if gesture_feature_dir:
+        command.extend(["--gesture-feature-dir", gesture_feature_dir])
+    if gesture_feature_dim is not None:
+        command.extend(["--gesture-feature-dim", str(gesture_feature_dim)])
 
     print(f"[experiment] {name}")
     print(f"  seed={seed}")
@@ -103,16 +110,20 @@ def main() -> None:
     parser.add_argument("--date-only", action="store_true", help="Only run date-holdout tests.")
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--skip-existing", action="store_true")
+    parser.add_argument("--output-model-name")
+    parser.add_argument("--gesture-feature-dir")
+    parser.add_argument("--gesture-feature-dim", type=int)
     args = parser.parse_args()
 
     if args.seed_only and args.date_only:
         raise SystemExit("--seed-only and --date-only cannot be used together.")
 
+    output_model_name = args.output_model_name or args.model
     experiments: list[tuple[str, int, list[str]]] = []
     if not args.date_only:
         default_test = default_test_video_names()
         for seed in args.seeds:
-            experiments.append((f"{args.model}_seed{seed}_default_test", seed, default_test))
+            experiments.append((f"{output_model_name}_seed{seed}_default_test", seed, default_test))
 
     if not args.seed_only:
         for group_name, prefix in DATE_GROUPS.items():
@@ -120,7 +131,7 @@ def main() -> None:
             if not test_videos:
                 print(f"[warn] empty date group: {group_name}")
                 continue
-            experiments.append((f"{args.model}_{group_name}_test_seed42", 42, test_videos))
+            experiments.append((f"{output_model_name}_{group_name}_test_seed42", 42, test_videos))
 
     for name, seed, test_videos in experiments:
         run_experiment(
@@ -132,6 +143,9 @@ def main() -> None:
             test_video_names=test_videos,
             execute=args.execute,
             skip_existing=args.skip_existing,
+            output_model_name=output_model_name,
+            gesture_feature_dir=args.gesture_feature_dir,
+            gesture_feature_dim=args.gesture_feature_dim,
         )
 
     if not args.execute:
