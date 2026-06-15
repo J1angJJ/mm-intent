@@ -128,6 +128,21 @@ Ours: Hand geometry 在主测试集上只错 4 个样本，12 类联合分类准
 
 Ours: Hand geometry 在大多数噪声设置下保持在 `0.99` 左右。文本高噪声下仍能保持主结果水平，进一步说明动作几何特征缓解了模型对文本模态的依赖。
 
+### 泛化分析
+
+![泛化分析](docs/figures/factorized_generalization.png)
+
+| 泛化设置 | Improved baseline | Ours: Hand geometry | Ours: Factorized heads | Factorized no explicit scene |
+|---|---:|---:|---:|---:|
+| 3-seed mean | 0.9615 | 0.9901 | **0.9906** | 0.9875 |
+| 4-date holdout mean | 0.9550 | **0.9746** | 0.9740 | 0.9620 |
+
+随机种子和按采集日期整批留出的结果表明，hand geometry 的提升不只存在于默认 seed 42。日期留出中最困难的 `2026-01-31` 组 joint accuracy 为 `0.9387`，说明模型仍受采集批次、动作表现和文本分布变化影响。
+
+Factorized heads 使用 hand geometry checkpoint 的 intent head 和 improved baseline 的 scene head。它在不降低完整模态主结果的情况下，将默认 split 的 `no_scene` joint accuracy 恢复到 `0.9933`。这里的 `no_scene` 指移除显式 ViT scene feature；MediaPipe 裁剪后的 CLIP gesture 仍可能保留部分背景信息，因此该结果应解释为“显式 Scene 模态缺失鲁棒性”，而不是完全无场景视觉输入。
+
+此外，前述模态缺失和噪声表格中的模型是在对应扰动条件下重新训练的。使用干净 checkpoint 直接面对测试时突发文本噪声时性能仍会明显下降，说明任意 test-time OOD 鲁棒性仍是后续工作。
+
 ## 尝试过程
 
 项目中还尝试了多种模型侧和特征侧改进：
