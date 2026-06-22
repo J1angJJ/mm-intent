@@ -248,11 +248,15 @@ Improved 与 Hand Geometry：
 
 ### 鲁棒性实验
 
-Improved、Hand Geometry 和 Baseline 均使用 `run_missing_experiments.py` 与 `run_noise_experiments.py`。缺失实验包含 5 个单模态和 10 个双模态组合；噪声实验包含五种模态的 20%/40%/60% 噪声。Baseline 运行前设置：
+Improved、Hand Geometry 和 Baseline 均使用 `run_missing_experiments.py` 与 `run_noise_experiments.py`。缺失实验包含 5 个单模态和 10 个双模态组合；噪声实验包含五种模态的 20%/40%/60% 噪声。
+
+课程要求的 raw missing 全量训练与独立测试可直接运行：
 
 ```powershell
-$env:SMART_AR_RANDOM_SEED = "123"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\run_raw_missing_reruns_utf8.ps1
 ```
+
+该流程为每个组合建立可审计的轻量条件缓存，只硬链接未缺失模态，缺失模态不执行提取；训练阶段跳过重复的内置测试，随后由 `code/test.py` 对 checkpoint 独立推理。`--skip-existing` 支持中断后续跑。结果写入 `outputs/raw_missing_experiments/`。
 
 ### Factorized Heads 与泛化实验
 

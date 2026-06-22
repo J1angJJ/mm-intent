@@ -11,7 +11,12 @@ import numpy as np
 import torch
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
-from raw_pipeline import COURSE_TEST_VIDEO_NAMES, default_raw_cache_dir, prepare_raw_features
+from raw_pipeline import (
+    COURSE_TEST_VIDEO_NAMES,
+    default_raw_cache_dir,
+    default_raw_missing_cache_dir,
+    prepare_raw_features,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -35,6 +40,7 @@ def load_checkpoint(path: Path, device: torch.device) -> dict[str, Any]:
 def configure_environment(args: argparse.Namespace, processed_data_dir: Path) -> None:
     os.environ["MM_INTENT_PROCESSED_DATA_DIR"] = str(processed_data_dir)
     os.environ["SMART_AR_TEST_VIDEO_NAMES"] = ",".join(args.video_names)
+    os.environ["SMART_AR_MISSING_MODALITIES"] = ",".join(args.missing_modalities)
     if args.gesture_feature_dir:
         os.environ["MM_INTENT_GESTURE_FEATURE_DIR"] = str(Path(args.gesture_feature_dir).resolve())
     if args.audio_feature_dir:
@@ -177,6 +183,7 @@ def main() -> None:
     parser.add_argument("--noise-level", type=float, default=0.0)
     parser.add_argument("--noise-space", choices=("feature", "raw"))
     parser.add_argument("--noise-seed", type=int, default=42)
+    parser.add_argument("--missing-modalities", nargs="*", default=[])
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--gesture-feature-dir")
     parser.add_argument("--audio-feature-dir")
@@ -204,6 +211,12 @@ def main() -> None:
     raw_cache_dir = (
         Path(args.raw_cache_dir).resolve()
         if args.raw_cache_dir
+        else default_raw_missing_cache_dir(
+            args.missing_modalities,
+            args.noise_seed,
+            args.gesture_representation,
+        )
+        if args.missing_modalities
         else default_raw_cache_dir(args.noise_modality or "", args.noise_level, args.noise_seed)
     )
     processed_data_dir = (
@@ -230,7 +243,15 @@ def main() -> None:
             if args.noise_modality and args.noise_level > 0.0
             else None
         )
-        prepare_raw_features(
+        if args.missing_modalities and base_feature_dir is None:
+            suffix = "_hand_geometry" if args.gesture_representation == "hand_geometry" else ""
+            base_feature_dir = (
+                PROJECT_ROOT
+                / "outputs"
+                / "raw_feature_cache"
+                / f"clean_seed{args.noise_seed}{suffix}"
+            ).resolve()
+        raw_manifest = prepare_raw_features(
             output_dir=raw_cache_dir,
             video_names=args.video_names,
             noise_modality=args.noise_modality or "",
@@ -241,7 +262,11 @@ def main() -> None:
             dry_run=args.preprocess_dry_run,
             base_feature_dir=base_feature_dir,
             gesture_representation=args.gesture_representation,
+            missing_modalities=args.missing_modalities,
         )
+        scene_cache_dir = raw_manifest.get("scene_cache_dir")
+        if scene_cache_dir:
+            os.environ["MM_INTENT_SCENE_CACHE_DIR"] = str(Path(str(scene_cache_dir)).resolve())
         if args.preprocess_dry_run:
             print("[test] preprocessing dry-run complete; checkpoint inference was not started.")
             return
@@ -305,6 +330,11 @@ def main() -> None:
         "checkpoint": str(checkpoint_path),
         "processed_data_dir": str(processed_data_dir),
         "video_names": args.video_names,
+        "missing_modalities": args.missing_modalities,
+        "raw_missing": {
+            "modalities": args.missing_modalities if args.input_mode == "raw" else [],
+            "condition_cache_enforced": bool(args.input_mode == "raw" and args.missing_modalities),
+        },
         "raw_noise": {
             "modality": args.noise_modality if args.noise_space == "raw" else "",
             "level": args.noise_level if args.noise_space == "raw" else 0.0,

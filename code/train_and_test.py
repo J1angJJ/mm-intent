@@ -1376,6 +1376,7 @@ def main() -> None:
         metrics = {
             "config": {
                 "random_seed": base.RANDOM_SEED,
+                "missing_modalities": list(base.MISSING_MODALITIES),
                 "batch_size": BATCH_SIZE,
                 "epochs": EPOCHS,
                 "patience": PATIENCE,
@@ -1663,6 +1664,7 @@ def main() -> None:
     metrics = {
         "config": {
             "random_seed": base.RANDOM_SEED,
+            "missing_modalities": list(base.MISSING_MODALITIES),
             "batch_size": BATCH_SIZE,
             "epochs": EPOCHS,
             "patience": PATIENCE,

@@ -483,6 +483,7 @@ def apply_modality_perturbations(
 def get_feature_paths(video_name: str) -> Dict[str, Path]:
     name_no_ext = Path(video_name).stem
     return {
+        "timestamp": PROCESSED_DATA_DIR / f"features_timestamp_{name_no_ext}.npy",
         "gesture": STRONG_GESTURE_DIR / f"strong_gesture_features_{name_no_ext}.npy",
         "imu": IMU_FEAT_DIR / f"imu_features_{name_no_ext}.npy",
         "audio": AUDIO_FEAT_DIR / f"audio_features_{name_no_ext}.npy",
@@ -495,51 +496,81 @@ def load_aligned_video(
     scene_cache: RealSceneFeatureCache,
 ) -> Optional[Dict[str, object]]:
     paths = get_feature_paths(video_name)
-    missing = [str(path) for path in paths.values() if not path.exists()]
-    if missing:
-        print(f"[skip] missing feature files for {video_name}: {missing}")
+    raw_missing = set(MISSING_MODALITIES)
+    required_paths = {"timestamp": paths["timestamp"]}
+    required_paths.update(
+        (modality, paths[modality])
+        for modality in ("gesture", "imu", "audio", "text")
+        if modality not in raw_missing
+    )
+    missing_paths = [str(path) for path in required_paths.values() if not path.exists()]
+    if missing_paths:
+        print(f"[skip] missing required feature files for {video_name}: {missing_paths}")
         return None
 
-    gesture_data = np.load(paths["gesture"], allow_pickle=True).item()
-    imu_data = np.load(paths["imu"], allow_pickle=True).item()
-    audio_data = np.load(paths["audio"], allow_pickle=True)
-    text_data = np.load(paths["text"], allow_pickle=True).item()
+    timestamp_data = np.load(paths["timestamp"], allow_pickle=True).item()
+    gesture_data = (
+        None
+        if "gesture" in raw_missing
+        else np.load(paths["gesture"], allow_pickle=True).item()
+    )
+    imu_data = None if "imu" in raw_missing else np.load(paths["imu"], allow_pickle=True).item()
+    audio_data = None if "audio" in raw_missing else np.load(paths["audio"], allow_pickle=True)
+    text_data = None if "text" in raw_missing else np.load(paths["text"], allow_pickle=True).item()
+
+    alignment_data = gesture_data if gesture_data is not None else timestamp_data
+    labels_source = alignment_data["labels"]
+    timestamps_source = alignment_data["approx_timestamps"]
 
     lengths = [
-        len(gesture_data["labels"]),
-        len(gesture_data["features"]),
-        len(gesture_data["approx_timestamps"]),
-        len(imu_data["features"]),
-        len(audio_data),
-        len(text_data["features"]),
+        len(labels_source),
+        len(timestamps_source),
     ]
+    if gesture_data is not None:
+        lengths.append(len(gesture_data["features"]))
+    if imu_data is not None:
+        lengths.append(len(imu_data["features"]))
+    if audio_data is not None:
+        lengths.append(len(audio_data))
+    if text_data is not None:
+        lengths.append(len(text_data["features"]))
     min_len = min(lengths)
     if min_len <= 0:
         print(f"[skip] no valid aligned samples for {video_name}")
         return None
 
-    labels = np.asarray(gesture_data["labels"][:min_len], dtype=object)
-    approx_timestamps = np.asarray(gesture_data["approx_timestamps"][:min_len], dtype=object)
+    labels = np.asarray(labels_source[:min_len], dtype=object)
+    approx_timestamps = np.asarray(timestamps_source[:min_len], dtype=object)
     valid_mask = np.array([str(label) not in UNKNOWN_LABELS for label in labels], dtype=bool)
     if not valid_mask.any():
         print(f"[skip] all labels are filtered as unknown for {video_name}")
         return None
 
-    imu_feat = normalize_dense_modality(
-        np.asarray(imu_data["features"][:min_len]),
-        TARGET_TIMESTEPS,
-        IMU_FEAT_DIM,
+    imu_feat = (
+        np.zeros((min_len, TARGET_TIMESTEPS, IMU_FEAT_DIM), dtype=np.float32)
+        if imu_data is None
+        else normalize_dense_modality(
+            np.asarray(imu_data["features"][:min_len]), TARGET_TIMESTEPS, IMU_FEAT_DIM
+        )
     )
-    gesture_feat = normalize_dense_modality(
-        np.asarray(gesture_data["features"][:min_len]),
-        TARGET_TIMESTEPS,
-        GESTURE_FEAT_DIM,
+    gesture_feat = (
+        np.zeros((min_len, TARGET_TIMESTEPS, GESTURE_FEAT_DIM), dtype=np.float32)
+        if gesture_data is None
+        else normalize_dense_modality(
+            np.asarray(gesture_data["features"][:min_len]), TARGET_TIMESTEPS, GESTURE_FEAT_DIM
+        )
     )
-    audio_feat = normalize_audio_modality(audio_data[:min_len])
-    text_feat = normalize_dense_modality(
-        np.asarray(text_data["features"][:min_len]),
-        TARGET_TIMESTEPS,
-        TEXT_FEAT_DIM,
+    audio_feat = (
+        np.zeros((min_len, TARGET_TIMESTEPS, AUDIO_FEAT_DIM), dtype=np.float32)
+        if audio_data is None
+        else normalize_audio_modality(audio_data[:min_len])
+    )
+    text_feat = (
+        np.zeros((min_len, TARGET_TIMESTEPS, TEXT_FEAT_DIM), dtype=np.float32)
+        if text_data is None
+        else normalize_dense_modality(
+            np.asarray(text_data["features"][:min_len]), TARGET_TIMESTEPS, TEXT_FEAT_DIM
+        )
     )
 
     scene_type = infer_scene_type(video_name)
@@ -547,7 +578,17 @@ def load_aligned_video(
 
     labels = labels[valid_mask].astype(np.int64)
     approx_timestamps = approx_timestamps[valid_mask]
-    scene_feat, scene_record = load_real_scene_features(video_name, approx_timestamps, scene_cache)
+    if "scene" in raw_missing:
+        scene_feat = np.zeros((len(approx_timestamps), SCENE_FEAT_DIM), dtype=np.float32)
+        scene_record = {
+            "scene_source": "missing_raw_modality",
+            "avi_path": None,
+            "sample_count": int(len(approx_timestamps)),
+            "failed_scene_frames": 0,
+            "example_timestamps": [str(value) for value in approx_timestamps[:5].tolist()],
+        }
+    else:
+        scene_feat, scene_record = load_real_scene_features(video_name, approx_timestamps, scene_cache)
     features = {
         "imu": imu_feat[valid_mask],
         "gesture": gesture_feat[valid_mask],
@@ -1548,6 +1589,7 @@ def main() -> None:
         metrics = {
             "config": {
                 "random_seed": RANDOM_SEED,
+                "missing_modalities": list(MISSING_MODALITIES),
                 "batch_size": BATCH_SIZE,
                 "epochs": EPOCHS,
                 "patience": PATIENCE,
@@ -1724,6 +1766,7 @@ def main() -> None:
     metrics = {
         "config": {
             "random_seed": RANDOM_SEED,
+            "missing_modalities": list(MISSING_MODALITIES),
             "batch_size": BATCH_SIZE,
             "epochs": EPOCHS,
             "patience": PATIENCE,

@@ -8,7 +8,12 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 from project_paths import PROCESSED_DATA_DIR, PROJECT_ROOT
-from raw_pipeline import COURSE_VIDEO_NAMES, default_raw_cache_dir, prepare_raw_features
+from raw_pipeline import (
+    COURSE_VIDEO_NAMES,
+    default_raw_cache_dir,
+    default_raw_missing_cache_dir,
+    prepare_raw_features,
+)
 
 
 FEATURE_PATTERNS = {
@@ -253,6 +258,12 @@ def main() -> None:
         raw_cache_dir = (
             Path(args.raw_cache_dir).resolve()
             if args.raw_cache_dir
+            else default_raw_missing_cache_dir(
+                args.missing_modalities,
+                args.noise_seed,
+                args.gesture_representation,
+            )
+            if args.missing_modalities
             else default_raw_cache_dir(args.noise_modality or "", args.noise_level, args.noise_seed)
         )
         args.processed_data_dir = str(raw_cache_dir)
@@ -261,6 +272,14 @@ def main() -> None:
             args.gesture_feature_dim = 96
         if args.base_feature_dir:
             base_feature_dir = Path(args.base_feature_dir).resolve()
+        elif args.missing_modalities:
+            suffix = "_hand_geometry" if args.gesture_representation == "hand_geometry" else ""
+            base_feature_dir = (
+                PROJECT_ROOT
+                / "outputs"
+                / "raw_feature_cache"
+                / f"clean_seed{args.noise_seed}{suffix}"
+            ).resolve()
         elif args.noise_modality and args.noise_level > 0.0:
             dataset_root = Path(args.dataset_dir).resolve() if args.dataset_dir else PROJECT_ROOT / "dataset"
             base_feature_dir = (dataset_root / "AR_Data_Process3.0" / "data_full").resolve()
@@ -274,7 +293,7 @@ def main() -> None:
     if args.input_mode == "raw":
         assert raw_cache_dir is not None
         env["MM_INTENT_SCENE_CACHE_DIR"] = str(raw_cache_dir / "scene_features")
-        prepare_raw_features(
+        raw_manifest = prepare_raw_features(
             output_dir=raw_cache_dir,
             video_names=COURSE_VIDEO_NAMES,
             noise_modality=args.noise_modality or "",
@@ -285,7 +304,11 @@ def main() -> None:
             dry_run=args.preprocess_dry_run,
             base_feature_dir=base_feature_dir,
             gesture_representation=args.gesture_representation,
+            missing_modalities=args.missing_modalities,
         )
+        scene_cache_dir = raw_manifest.get("scene_cache_dir")
+        if scene_cache_dir:
+            env["MM_INTENT_SCENE_CACHE_DIR"] = str(Path(str(scene_cache_dir)).resolve())
         if args.preprocess_dry_run:
             print("[train] preprocessing dry-run complete; training was not started.")
             return
@@ -296,7 +319,11 @@ def main() -> None:
                 raise SystemExit("Cached features are incomplete. Re-run with --extract-features or generate features first.")
             run_commands(feature_commands(), env)
 
-    if not args.skip_feature_check and not check_features(processed_data_dir, args.expected_count):
+    if (
+        args.input_mode != "raw"
+        and not args.skip_feature_check
+        and not check_features(processed_data_dir, args.expected_count)
+    ):
         raise SystemExit("Feature extraction finished but cached features are still incomplete.")
 
     print(f"[train] model={args.model} input_mode={args.input_mode}")
