@@ -287,14 +287,18 @@ python code/batch_end_to_end.py \
 | workflow cached Hand Geometry | train seen 16949 / test 744 | 0.000434 s | 0.000127 s | 使用缓存特征 |
 | batch cached Hand Geometry | 32 | 0.015178 s | 0.000806 s | cache load 0.000480 s/sample |
 | batch raw Hand Geometry | 32 | 0.013226 s | 0.000729 s | raw geometry 1.758790 s/sample |
+| full raw workflow | train seen 10967 / test 744 | 0.000436 s | 0.000126 s | total wall time 2:01:30 |
 
 对应完整模态测试结果：
 
 | 模型 | joint_acc | intent_acc | scene_acc | best_epoch |
 |---|---:|---:|---:|---:|
 | Ours: Hand Geometry workflow E2E | 0.9946 | 0.9946 | 1.0000 | 13 |
+| Ours: Hand Geometry full raw E2E | 0.9852 | 0.9866 | 0.9987 | 7 |
 
 需要注意：workflow 计时反映“缓存特征后的训练/测试吞吐”；raw batch 计时反映 MediaPipe hand geometry 从视频现算的代价。二者协议不同，应分别汇报。
+
+Full raw workflow 从原始数据重新执行 timestamp、MediaPipe-cropped CLIP gesture、MFCC、ASR、IMU、Hand Geometry 与训练测试。总墙钟时间为 2:01:30，其中主要耗时来自 `strong_gesture2.0.py` 约 60 分钟和 `extract_hand_geometry_features.py` 约 55 分钟。
 
 ### Hand Geometry 鲁棒性实验
 
