@@ -10,37 +10,54 @@ from typing import Iterable, Sequence
 from project_paths import PROCESSED_DATA_DIR, PROJECT_ROOT
 
 
-FEATURE_PATTERNS = {
-    "timestamp": "features_timestamp_*.npy",
-    "gesture": "strong_gesture_features/strong_gesture_features_*.npy",
-    "audio": "audio_features/audio_features_*.npy",
-    "text": "text_features/text_features_*.npy",
-    "imu": "imu_features/imu_features_*.npy",
-}
+def resolve_feature_dir(value: str | None, default_subdir: str) -> Path:
+    return Path(value).resolve() if value else (PROCESSED_DATA_DIR / default_subdir).resolve()
 
 
-def count_pattern(pattern: str) -> int:
-    return len(list(PROCESSED_DATA_DIR.glob(pattern)))
+def feature_specs(args: argparse.Namespace) -> dict[str, tuple[Path, str]]:
+    return {
+        "timestamp": (PROCESSED_DATA_DIR, "features_timestamp_*.npy"),
+        "gesture": (resolve_feature_dir(args.gesture_feature_dir, "strong_gesture_features"), "strong_gesture_features_*.npy"),
+        "audio": (resolve_feature_dir(args.audio_feature_dir, "audio_features"), "audio_features_*.npy"),
+        "text": (resolve_feature_dir(args.text_feature_dir, "text_features"), "text_features_*.npy"),
+        "imu": (resolve_feature_dir(args.imu_feature_dir, "imu_features"), "imu_features_*.npy"),
+    }
 
 
-def check_features(expected_count: int) -> bool:
+def is_hand_geometry_target(args: argparse.Namespace) -> bool:
+    gesture_dir = resolve_feature_dir(args.gesture_feature_dir, "strong_gesture_features")
+    return "hand_geometry_features" in {part.lower() for part in gesture_dir.parts}
+
+
+def check_features(args: argparse.Namespace, expected_count: int) -> bool:
     print("[feature-check]")
     ok = True
-    for name, pattern in FEATURE_PATTERNS.items():
-        count = count_pattern(pattern)
-        print(f"  {name:9s} {count}/{expected_count}")
+    for name, (feature_dir, pattern) in feature_specs(args).items():
+        count = len(list(feature_dir.glob(pattern)))
+        print(f"  {name:9s} {count}/{expected_count}  {feature_dir}")
         ok = ok and count >= expected_count
     return ok
 
 
-def feature_commands() -> Sequence[Sequence[str]]:
-    return (
+def feature_commands(args: argparse.Namespace) -> Sequence[Sequence[str]]:
+    commands: list[Sequence[str]] = [
         (sys.executable, "code/feature_extraction/get_timestamp.py"),
         (sys.executable, "code/feature_extraction/strong_gesture2.0.py"),
         (sys.executable, "code/feature_extraction/mfcc.py"),
         (sys.executable, "code/feature_extraction/ASR.py"),
         (sys.executable, "code/feature_extraction/imu.py"),
-    )
+    ]
+    if is_hand_geometry_target(args):
+        output_dir = resolve_feature_dir(args.gesture_feature_dir, "hand_geometry_features")
+        commands.append(
+            (
+                sys.executable,
+                "code/feature_extraction/extract_hand_geometry_features.py",
+                "--output-dir",
+                str(output_dir),
+            )
+        )
+    return tuple(commands)
 
 
 def run_commands(commands: Iterable[Sequence[str]], env: dict[str, str]) -> None:
@@ -212,12 +229,12 @@ def main() -> None:
 
     env = build_env(args)
     if not args.skip_feature_check:
-        features_ready = check_features(args.expected_count)
+        features_ready = check_features(args, args.expected_count)
         if not features_ready:
             if not args.extract_features:
                 raise SystemExit("Cached features are incomplete. Re-run with --extract-features or generate features first.")
-            run_commands(feature_commands(), env)
-            if not check_features(args.expected_count):
+            run_commands(feature_commands(args), env)
+            if not check_features(args, args.expected_count):
                 raise SystemExit("Feature extraction finished but cached features are still incomplete.")
 
     print(f"[train] model={args.model}")

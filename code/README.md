@@ -8,7 +8,7 @@
   - 将这个脚本拆分成train.py和test.py，将特征提取代码整合进train.py和test.py代码，调试，实现端到端输入输出；重构代码后，运行train.py脚本进行模型训练，运行test.py脚本进行测试。
 - `train.py`
   - 端到端训练入口封装：先检查五类缓存特征是否齐全，再分发到 baseline 或 improved 训练脚本。
-  - 可通过 `--extract-features` 在特征缺失时依次调用特征提取脚本。
+  - 可通过 `--extract-features` 在特征缺失时依次调用特征提取脚本；当 `--gesture-feature-dir` 指向 `hand_geometry_features` 时，会同时生成 Hand Geometry 特征。
   - 可通过 `--missing-modalities` 和 `--noise-modality --noise-level` 启动模态缺失/噪声实验。
   - 属于工作流级端到端，适合正式全量重跑；训练输出 `metrics.json` 会记录平均样本训练时间和平均样本测试时间。
 - `batch_end_to_end.py`

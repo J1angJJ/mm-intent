@@ -253,7 +253,7 @@ python code/train.py \
   --output-dir outputs/workflow_e2e_hand_geometry
 ```
 
-如需在特征缺失时自动串起五类特征提取，去掉 `--skip-feature-check` 并添加 `--extract-features`。
+如需在特征缺失时自动串起特征提取，去掉 `--skip-feature-check` 并添加 `--extract-features`。当 `--gesture-feature-dir` 指向 `hand_geometry_features` 时，流程会额外生成 Hand Geometry 特征；消融变体仍建议先用 `build_hand_geometry_variants.py` 从已缓存 Hand Geometry 派生。
 
 ### Batch 级端到端
 
