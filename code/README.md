@@ -56,6 +56,7 @@ python code/batch_end_to_end.py \
 - `ASR.py`：语音转文本特征
 - `imu.py`：提取IMU特征
 - `build_hand_geometry_variants.py`：从已缓存的 Hand Geometry 特征派生期末论文消融变体，例如 `landmark_only`、`no_pinch`、`delta`、`delta_accel`，无需重新读取原始视频。
+- `run_hand_geometry_window_ablation.py`：重新提取不同时间窗口/采样帧数的 Hand Geometry 特征并训练，用于分析动作识别需要的时间上下文。
 
 ### 3. 数据集
 - 位于dataset文件夹，包含3个用户在office场景和museum场景的6种意图交互数据。

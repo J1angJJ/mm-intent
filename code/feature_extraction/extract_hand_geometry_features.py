@@ -189,6 +189,8 @@ def extract_sequence(video_path: Path, center_ms: float, detector_kind: str, det
 
 
 def main() -> None:
+    global HALF_WINDOW_MS, SEQ_LEN
+
     parser = argparse.ArgumentParser(description="Extract MediaPipe hand geometry time-series features.")
     parser.add_argument("--output-dir", default=str(PROCESSED_DATA_DIR / "hand_geometry_features"))
     parser.add_argument(
@@ -196,7 +198,15 @@ def main() -> None:
         default=os.getenv("MM_INTENT_HAND_LANDMARKER_TASK", str(PROJECT_ROOT / "models" / "hand_landmarker.task")),
     )
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument("--seq-len", type=int, default=SEQ_LEN)
+    parser.add_argument("--half-window-ms", type=int, default=HALF_WINDOW_MS)
     args = parser.parse_args()
+    if args.seq_len <= 0:
+        raise SystemExit("--seq-len must be positive.")
+    if args.half_window_ms <= 0:
+        raise SystemExit("--half-window-ms must be positive.")
+    SEQ_LEN = args.seq_len
+    HALF_WINDOW_MS = args.half_window_ms
 
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -206,7 +216,10 @@ def main() -> None:
     if args.limit > 0:
         items = items[: args.limit]
 
-    print(f"[hand-geometry] videos={len(items)} output={output_dir} dim={FEATURE_DIM}")
+    print(
+        f"[hand-geometry] videos={len(items)} output={output_dir} "
+        f"seq_len={SEQ_LEN} half_window_ms={HALF_WINDOW_MS} dim={FEATURE_DIM}"
+    )
     try:
         for avi_name, mp4_name in items:
             mp4_base = Path(mp4_name).stem

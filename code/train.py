@@ -92,6 +92,8 @@ def build_env(args: argparse.Namespace) -> dict[str, str]:
         env["MM_INTENT_TEXT_FEAT_DIM"] = str(args.text_feature_dim)
     if args.imu_feature_dim is not None:
         env["MM_INTENT_IMU_FEAT_DIM"] = str(args.imu_feature_dim)
+    if args.target_timesteps is not None:
+        env["MM_INTENT_TARGET_TIMESTEPS"] = str(args.target_timesteps)
     if args.epochs is not None:
         env["BASELINE_SCENE_EPOCHS"] = str(args.epochs)
         env["IMPROVED_REAL_SCENE_A2_EPOCHS"] = str(args.epochs)
@@ -186,6 +188,7 @@ def main() -> None:
     parser.add_argument("--audio-feature-dim", type=int)
     parser.add_argument("--text-feature-dim", type=int)
     parser.add_argument("--imu-feature-dim", type=int)
+    parser.add_argument("--target-timesteps", type=int)
     parser.add_argument("--missing-modalities", nargs="*", default=[])
     parser.add_argument("--noise-modality", choices=("imu", "gesture", "audio", "text", "scene"))
     parser.add_argument("--noise-level", type=float, default=0.0)
