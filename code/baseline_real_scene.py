@@ -38,6 +38,7 @@ from project_paths import (
     configure_hf_cache,
 )
 from real_scene_utils import REAL_SCENE_CACHE_DIR, RealSceneFeatureCache, load_real_scene_features
+from runtime_timing import timed_block, timing_payload
 from transformers import ViTImageProcessor, ViTModel
 
 configure_hf_cache()
@@ -561,6 +562,7 @@ def load_aligned_video(
         **features,
         "labels": labels,
         "scene_targets": scene_targets[valid_mask],
+        "approx_timestamps": approx_timestamps,
         "scene_type": scene_type,
         "scene_record": scene_record,
     }
@@ -1452,15 +1454,20 @@ def main() -> None:
     val_losses: List[float] = []
     train_accs: List[float] = []
     val_accs: List[float] = []
+    train_timing_seconds = 0.0
+    train_samples_seen = 0
 
     print("[step] start training")
     for epoch in range(1, EPOCHS + 1):
-        train_loss, train_acc = train_one_epoch(
-            model,
-            train_loader,
-            criterion,
-            optimizer,
-        )
+        with timed_block() as train_timer:
+            train_loss, train_acc = train_one_epoch(
+                model,
+                train_loader,
+                criterion,
+                optimizer,
+            )
+        train_timing_seconds += train_timer["seconds"]
+        train_samples_seen += len(y_train)
         val_loss, val_acc, _, _ = evaluate(
             model,
             val_loader,
@@ -1475,7 +1482,8 @@ def main() -> None:
         print(
             f"epoch {epoch:03d}/{EPOCHS:03d} | "
             f"train_loss={train_loss:.4f} train_acc={train_acc:.4f} | "
-            f"val_loss={val_loss:.4f} val_acc={val_acc:.4f}"
+            f"val_loss={val_loss:.4f} val_acc={val_acc:.4f} | "
+            f"train_time/sample={train_timer['seconds'] / max(len(y_train), 1):.6f}s"
         )
 
         improved = (val_acc > best_val_acc) or (
@@ -1589,6 +1597,12 @@ def main() -> None:
                 "val_loss": float(val_loss),
                 "val_joint_acc": float(val_acc),
             },
+            "runtime": timing_payload(
+                train_timing_seconds,
+                train_samples_seen,
+                None,
+                0,
+            ),
             "class_names": joint_class_names,
             "intent_class_names": intent_class_names,
             "scene_class_names": scene_class_names,
@@ -1614,11 +1628,14 @@ def main() -> None:
         print(f"  scene_selection {scene_selection_path}")
         return
 
-    test_loss, test_acc, y_test_true, y_test_pred = evaluate(
-        model,
-        test_loader,
-        criterion,
-    )
+    with timed_block() as test_timer:
+        test_loss, test_acc, y_test_true, y_test_pred = evaluate(
+            model,
+            test_loader,
+            criterion,
+        )
+    print(f"[timing] train_avg_seconds_per_sample={train_timing_seconds / max(train_samples_seen, 1):.6f}")
+    print(f"[timing] test_avg_seconds_per_sample={test_timer['seconds'] / max(len(y_test), 1):.6f}")
 
     report = classification_report(
         y_test_true,
@@ -1773,6 +1790,12 @@ def main() -> None:
             "test_scene_acc": float(np.mean(y_test_scene_true == y_test_scene_pred)),
             "test_intent_acc": float(np.mean(y_test_intent_true == y_test_intent_pred)),
         },
+        "runtime": timing_payload(
+            train_timing_seconds,
+            train_samples_seen,
+            test_timer["seconds"],
+            len(y_test),
+        ),
         "class_names": joint_class_names,
         "intent_class_names": intent_class_names,
         "scene_class_names": scene_class_names,

@@ -10,8 +10,14 @@
   - 端到端训练入口封装：先检查五类缓存特征是否齐全，再分发到 baseline 或 improved 训练脚本。
   - 可通过 `--extract-features` 在特征缺失时依次调用特征提取脚本。
   - 可通过 `--missing-modalities` 和 `--noise-modality --noise-level` 启动模态缺失/噪声实验。
+  - 属于工作流级端到端，适合正式全量重跑；训练输出 `metrics.json` 会记录平均样本训练时间和平均样本测试时间。
+- `batch_end_to_end.py`
+  - 独立的 batch 级端到端入口，不触发全量训练。
+  - 默认复用缓存特征，完成一个 batch 的模型训练 step 和测试 forward，并输出平均样本耗时。
+  - 可通过 `--raw-hand-geometry` 对当前 batch 从 fisheye 原视频现算 MediaPipe hand geometry，用于单独评估特征提取耗时。
 - `test.py`
   - 测试结果入口封装：读取训练输出目录中的 `metrics.json` 和分类报告，打印关键测试指标。
+  - 若 `metrics.json` 中包含 `runtime` 字段，会同时打印 `train_avg_seconds_per_sample` 和 `test_avg_seconds_per_sample`。
 - `run_missing_experiments.py`
   - 生成或执行单模态缺失、双模态缺失实验命令。
 - `run_noise_experiments.py`
@@ -23,6 +29,23 @@
 - `*.pt`：训练完成后的模型权重文件
 - `scalers.pkl`：输入特征标准化器
 - `label_encoder.pkl`：类别标签编码器
+- `metrics.json`：包含效果指标、数据划分、训练曲线和运行时间。
+
+运行时间字段说明：
+
+- `runtime.train_avg_seconds_per_sample`：训练阶段平均每个样本耗时，只统计训练 batch 的 forward、backward 和 optimizer step。
+- `runtime.test_avg_seconds_per_sample`：测试阶段平均每个样本耗时，只统计最终测试集 evaluate/forward。
+- `runtime.train_total_seconds` / `runtime.test_total_seconds`：对应阶段总耗时。
+
+batch 级端到端示例：
+
+```bash
+python code/batch_end_to_end.py \
+  --model improved \
+  --hand-geometry \
+  --batch-size 32 \
+  --output-dir outputs/batch_e2e_hand_geometry
+```
 
 ### 2. 特征提取代码，位于feature_extraction文件夹
 - `get_timestamp.py`：提取时间戳

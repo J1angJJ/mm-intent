@@ -17,6 +17,7 @@ from torch.utils.data import DataLoader, Dataset
 
 import baseline_real_scene as base
 from project_paths import MODEL_OUTPUT_ROOT
+from runtime_timing import timed_block, timing_payload
 
 
 # ============================================================
@@ -1223,17 +1224,22 @@ def main() -> None:
     train_margin_losses: List[float] = []
     train_missing_distill_losses: List[float] = []
     train_supcon_losses: List[float] = []
+    train_timing_seconds = 0.0
+    train_samples_seen = 0
 
     print("[step] start training")
     for epoch in range(1, EPOCHS + 1):
-        train_loss, train_acc, train_parts = train_one_epoch(
-            model,
-            train_loader,
-            joint_criterion,
-            intent_criterion,
-            scene_criterion,
-            optimizer,
-        )
+        with timed_block() as train_timer:
+            train_loss, train_acc, train_parts = train_one_epoch(
+                model,
+                train_loader,
+                joint_criterion,
+                intent_criterion,
+                scene_criterion,
+                optimizer,
+            )
+        train_timing_seconds += train_timer["seconds"]
+        train_samples_seen += len(y_train_joint)
         val_metrics = evaluate(
             model,
             val_loader,
@@ -1273,7 +1279,8 @@ def main() -> None:
             f"train_loss={train_loss:.4f} train_acc={train_acc:.4f} | "
             f"val_loss={val_metrics['loss']:.4f} val_joint={val_metrics['joint_acc']:.4f} "
             f"val_intent={val_metrics['intent_acc']:.4f} val_scene={val_metrics['scene_acc']:.4f} "
-            f"select={selection_score:.4f}"
+            f"select={selection_score:.4f} | "
+            f"train_time/sample={train_timer['seconds'] / max(len(y_train_joint), 1):.6f}s"
         )
 
         improved = (selection_score > best_selection_score) or (
@@ -1464,6 +1471,12 @@ def main() -> None:
                 "val_gesture_intent_loss_only": float(val_metrics["gesture_intent_loss"]),
                 "val_fallback_loss_only": float(val_metrics["fallback_loss"]),
             },
+            "runtime": timing_payload(
+                train_timing_seconds,
+                train_samples_seen,
+                None,
+                0,
+            ),
             "class_names": joint_class_names,
             "intent_class_names": intent_class_names,
             "scene_class_names": scene_class_names,
@@ -1518,13 +1531,16 @@ def main() -> None:
         print(f"  gate_summary    {gate_summary_path}")
         return
 
-    test_metrics = evaluate(
-        model,
-        test_loader,
-        joint_criterion,
-        intent_criterion,
-        scene_criterion,
-    )
+    with timed_block() as test_timer:
+        test_metrics = evaluate(
+            model,
+            test_loader,
+            joint_criterion,
+            intent_criterion,
+            scene_criterion,
+        )
+    print(f"[timing] train_avg_seconds_per_sample={train_timing_seconds / max(train_samples_seen, 1):.6f}")
+    print(f"[timing] test_avg_seconds_per_sample={test_timer['seconds'] / max(len(y_test_joint), 1):.6f}")
 
     report = classification_report(
         test_metrics["joint_true"],
@@ -1767,6 +1783,12 @@ def main() -> None:
             "test_gesture_intent_loss_only": float(test_metrics["gesture_intent_loss"]),
             "test_fallback_loss_only": float(test_metrics["fallback_loss"]),
         },
+        "runtime": timing_payload(
+            train_timing_seconds,
+            train_samples_seen,
+            test_timer["seconds"],
+            len(y_test_joint),
+        ),
         "class_names": joint_class_names,
         "intent_class_names": intent_class_names,
         "scene_class_names": scene_class_names,

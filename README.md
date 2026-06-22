@@ -219,6 +219,65 @@ python code/run_gesture_geometry_suite.py \
   --patience 4
 ```
 
+训练输出的 `metrics.json` 会记录课程要求的运行时间字段：
+
+```text
+runtime.train_avg_seconds_per_sample
+runtime.test_avg_seconds_per_sample
+runtime.train_total_seconds
+runtime.test_total_seconds
+```
+
+也可以通过测试入口直接查看：
+
+```bash
+python code/test.py \
+  --model improved \
+  --output-dir outputs/feature_suite/hand_geometry/main
+```
+
+### 工作流级端到端
+
+`train.py` 用于检查缓存特征、必要时执行全量特征提取，并启动完整训练评估。该入口适合正式全量重跑：
+
+```bash
+python code/train.py \
+  --model improved \
+  --skip-feature-check \
+  --epochs 100 \
+  --patience 4 \
+  --batch-size 64 \
+  --gesture-feature-dir dataset/AR_Data_Process3.0/data/hand_geometry_features \
+  --gesture-feature-dim 96 \
+  --output-dir outputs/workflow_e2e_hand_geometry
+```
+
+如需在特征缺失时自动串起五类特征提取，去掉 `--skip-feature-check` 并添加 `--extract-features`。
+
+### Batch 级端到端
+
+`batch_end_to_end.py` 是独立的 batch 级闭环检查，不会触发全量训练。默认复用已有缓存特征，统计缓存加载、单 batch 训练 step 和单 batch 测试 forward 的平均样本时间：
+
+```bash
+python code/batch_end_to_end.py \
+  --model improved \
+  --hand-geometry \
+  --batch-size 32 \
+  --output-dir outputs/batch_e2e_hand_geometry
+```
+
+如果要单独评估当前 batch 从 fisheye 原视频现算 MediaPipe hand geometry 的耗时，可加：
+
+```bash
+python code/batch_end_to_end.py \
+  --model improved \
+  --hand-geometry \
+  --raw-hand-geometry \
+  --allow-raw-fallback \
+  --batch-size 32 \
+  --output-dir outputs/batch_e2e_hand_geometry_raw
+```
+
 ### Hand Geometry 鲁棒性实验
 
 ```bash

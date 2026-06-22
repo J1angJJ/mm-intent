@@ -22,6 +22,7 @@ def load_json(path: Path) -> dict[str, Any]:
 def print_metric_table(metrics: dict[str, Any]) -> None:
     final_metrics = metrics.get("final_metrics", {})
     best = metrics.get("best_checkpoint", {})
+    runtime = metrics.get("runtime", {})
     print("[best]")
     for key in ("epoch", "val_acc", "val_loss", "selection_score"):
         if key in best:
@@ -36,6 +37,16 @@ def print_metric_table(metrics: dict[str, Any]) -> None:
     ):
         if key in final_metrics:
             print(f"  {key:20s} {final_metrics[key]}")
+    if runtime:
+        print("[runtime]")
+        for key in (
+            "train_avg_seconds_per_sample",
+            "test_avg_seconds_per_sample",
+            "train_total_seconds",
+            "test_total_seconds",
+        ):
+            if key in runtime:
+                print(f"  {key:30s} {runtime[key]}")
 
 
 def print_report(path: Path, title: str) -> None:

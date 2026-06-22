@@ -81,6 +81,9 @@ def build_env(args: argparse.Namespace) -> dict[str, str]:
     if args.patience is not None:
         env["BASELINE_SCENE_PATIENCE"] = str(args.patience)
         env["IMPROVED_REAL_SCENE_A2_PATIENCE"] = str(args.patience)
+    if args.batch_size is not None:
+        env["BASELINE_SCENE_BATCH_SIZE"] = str(args.batch_size)
+        env["IMPROVED_REAL_SCENE_A2_BATCH_SIZE"] = str(args.batch_size)
     if args.missing_modalities:
         env["SMART_AR_MISSING_MODALITIES"] = ",".join(args.missing_modalities)
     if args.noise_modality:
@@ -153,6 +156,7 @@ def main() -> None:
     parser.add_argument("--skip-feature-check", action="store_true")
     parser.add_argument("--epochs", type=int)
     parser.add_argument("--patience", type=int)
+    parser.add_argument("--batch-size", type=int)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--val-split", type=float)
     parser.add_argument("--test-video-names", nargs="*", default=[])
