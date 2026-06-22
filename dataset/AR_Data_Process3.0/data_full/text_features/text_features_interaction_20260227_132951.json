@@ -1,0 +1,578 @@
+[
+  {
+    "id": 0,
+    "abs_timestamp": [
+      11.01,
+      12.51
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 1,
+    "abs_timestamp": [
+      11.7,
+      13.2
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 2,
+    "abs_timestamp": [
+      14.55,
+      16.05
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 3,
+    "abs_timestamp": [
+      17.91,
+      19.41
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 4,
+    "abs_timestamp": [
+      21.27,
+      22.77
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 5,
+    "abs_timestamp": [
+      24.435,
+      25.935
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 6,
+    "abs_timestamp": [
+      28.02,
+      29.52
+    ],
+    "text": "选择",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 7,
+    "abs_timestamp": [
+      31.08,
+      32.58
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 8,
+    "abs_timestamp": [
+      34.125,
+      35.625
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 9,
+    "abs_timestamp": [
+      36.87,
+      38.37
+    ],
+    "text": "选择",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 10,
+    "abs_timestamp": [
+      39.705,
+      41.205
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 11,
+    "abs_timestamp": [
+      42.285,
+      43.785
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 12,
+    "abs_timestamp": [
+      44.91,
+      46.41
+    ],
+    "text": "雪载",
+    "pinyin": "xuě zài"
+  },
+  {
+    "id": 13,
+    "abs_timestamp": [
+      47.37,
+      48.87
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 14,
+    "abs_timestamp": [
+      50.01,
+      51.51
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 15,
+    "abs_timestamp": [
+      52.785,
+      54.285
+    ],
+    "text": "选择",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 16,
+    "abs_timestamp": [
+      55.755,
+      57.255
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 17,
+    "abs_timestamp": [
+      58.47,
+      59.97
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 18,
+    "abs_timestamp": [
+      61.08,
+      62.58
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 19,
+    "abs_timestamp": [
+      63.765,
+      65.265
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 20,
+    "abs_timestamp": [
+      66.705,
+      68.205
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 21,
+    "abs_timestamp": [
+      69.615,
+      71.115
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 22,
+    "abs_timestamp": [
+      72.255,
+      73.755
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 23,
+    "abs_timestamp": [
+      75.075,
+      76.575
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 24,
+    "abs_timestamp": [
+      77.55,
+      79.05
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 25,
+    "abs_timestamp": [
+      80.01,
+      81.51
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 26,
+    "abs_timestamp": [
+      82.485,
+      83.985
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 27,
+    "abs_timestamp": [
+      85.005,
+      86.505
+    ],
+    "text": "选择",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 28,
+    "abs_timestamp": [
+      87.51,
+      89.01
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 29,
+    "abs_timestamp": [
+      89.97,
+      91.47
+    ],
+    "text": "选择",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 30,
+    "abs_timestamp": [
+      92.37,
+      93.87
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 31,
+    "abs_timestamp": [
+      94.695,
+      96.195
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 32,
+    "abs_timestamp": [
+      97.26,
+      98.76
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 33,
+    "abs_timestamp": [
+      99.585,
+      101.085
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 34,
+    "abs_timestamp": [
+      102.045,
+      103.545
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 35,
+    "abs_timestamp": [
+      104.385,
+      105.885
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 36,
+    "abs_timestamp": [
+      106.725,
+      108.225
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 37,
+    "abs_timestamp": [
+      109.11,
+      110.61
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 38,
+    "abs_timestamp": [
+      111.27,
+      112.77
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 39,
+    "abs_timestamp": [
+      113.715,
+      115.215
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 40,
+    "abs_timestamp": [
+      116.025,
+      117.525
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 41,
+    "abs_timestamp": [
+      118.29,
+      119.79
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 42,
+    "abs_timestamp": [
+      120.795,
+      122.295
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 43,
+    "abs_timestamp": [
+      122.88,
+      124.38
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 44,
+    "abs_timestamp": [
+      124.95,
+      126.45
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 45,
+    "abs_timestamp": [
+      127.065,
+      128.565
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 46,
+    "abs_timestamp": [
+      129.27,
+      130.77
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 47,
+    "abs_timestamp": [
+      131.415,
+      132.915
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 48,
+    "abs_timestamp": [
+      133.575,
+      135.075
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 49,
+    "abs_timestamp": [
+      135.915,
+      137.415
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 50,
+    "abs_timestamp": [
+      138.21,
+      139.71
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 51,
+    "abs_timestamp": [
+      139.995,
+      141.495
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 52,
+    "abs_timestamp": [
+      140.505,
+      142.005
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 53,
+    "abs_timestamp": [
+      142.545,
+      144.045
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 54,
+    "abs_timestamp": [
+      144.735,
+      146.235
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 55,
+    "abs_timestamp": [
+      146.91,
+      148.41
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 56,
+    "abs_timestamp": [
+      149.235,
+      150.735
+    ],
+    "text": "选择",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 57,
+    "abs_timestamp": [
+      151.38,
+      152.88
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 58,
+    "abs_timestamp": [
+      153.255,
+      154.755
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 59,
+    "abs_timestamp": [
+      155.355,
+      156.855
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 60,
+    "abs_timestamp": [
+      157.41,
+      158.91
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 61,
+    "abs_timestamp": [
+      159.6,
+      161.1
+    ],
+    "text": "選擇",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 62,
+    "abs_timestamp": [
+      161.25,
+      162.75
+    ],
+    "text": "选择",
+    "pinyin": "xuǎn zé"
+  },
+  {
+    "id": 63,
+    "abs_timestamp": [
+      161.715,
+      163.215
+    ],
+    "text": "选择",
+    "pinyin": "xuǎn zé"
+  }
+]

@@ -100,3 +100,8 @@ vla_world_model_lab/artifacts/
 *.tar.gz
 *.tgz
 exports/
+
+# Local documentation and environment reference files
+/docs/
+/server-pip-freeze.txt
+/README.md

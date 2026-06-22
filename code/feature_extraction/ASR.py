@@ -18,6 +18,7 @@ from project_paths import (
     SENTENCE_MODEL_NAME_OR_PATH,
     configure_hf_cache,
 )
+from raw_data_utils import corrupt_text_characters, select_video_names
 
 configure_hf_cache()
 
@@ -92,6 +93,7 @@ VIDEO_NAMES = [
     "interaction_20260306_085830.mp4",
     "interaction_20260306_090441.mp4",
 ]
+VIDEO_NAMES = select_video_names(VIDEO_NAMES)
 
 # ============================
 # 3. 功能模块
@@ -131,7 +133,7 @@ def parse_metadata_timestamps(metadata_path, mp4_name, window_sec):
         time_ranges.append((start, end))
     return time_ranges
 
-def transcribe_and_embed(wav_path, time_ranges, whisper_model, st_model):
+def transcribe_and_embed(wav_path, time_ranges, whisper_model, st_model, source_key=""):
     audio, sr = librosa.load(wav_path, sr=16000, mono=True)
     segments_meta = []
     raw_embeddings = []
@@ -149,6 +151,8 @@ def transcribe_and_embed(wav_path, time_ranges, whisper_model, st_model):
                 result = whisper_model.transcribe(segment_audio, language="zh", fp16=False)
                 text = result["text"].strip()
             except: text = ""
+
+        text = corrupt_text_characters(text, f"{source_key}|segment={idx}")
 
         # 转拼音
         pinyin_text = ""
@@ -223,7 +227,7 @@ if __name__ == "__main__":
             continue
 
         # 3. ASR + Embedding
-        features, meta = transcribe_and_embed(temp_wav, time_ranges, whisper_model, st_model)
+        features, meta = transcribe_and_embed(temp_wav, time_ranges, whisper_model, st_model, video_name)
 
         # 4. 保存结果
         out_npy = os.path.join(TEXT_OUT_DIR, f"text_features_{name_base}.npy")

@@ -1,0 +1,533 @@
+[
+  {
+    "id": 0,
+    "abs_timestamp": [
+      2.085,
+      3.585
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 1,
+    "abs_timestamp": [
+      4.47,
+      5.97
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 2,
+    "abs_timestamp": [
+      6.87,
+      8.370000000000001
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 3,
+    "abs_timestamp": [
+      9.135,
+      10.635
+    ],
+    "text": "梵界",
+    "pinyin": "fàn jiè"
+  },
+  {
+    "id": 4,
+    "abs_timestamp": [
+      11.415,
+      12.915
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 5,
+    "abs_timestamp": [
+      13.68,
+      15.18
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 6,
+    "abs_timestamp": [
+      15.855,
+      17.355
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 7,
+    "abs_timestamp": [
+      18.0,
+      19.5
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 8,
+    "abs_timestamp": [
+      20.37,
+      21.87
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 9,
+    "abs_timestamp": [
+      22.8,
+      24.3
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 10,
+    "abs_timestamp": [
+      25.26,
+      26.76
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 11,
+    "abs_timestamp": [
+      27.96,
+      29.46
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 12,
+    "abs_timestamp": [
+      30.42,
+      31.92
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 13,
+    "abs_timestamp": [
+      32.91,
+      34.41
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 14,
+    "abs_timestamp": [
+      35.25,
+      36.75
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 15,
+    "abs_timestamp": [
+      37.68,
+      39.18
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 16,
+    "abs_timestamp": [
+      39.99,
+      41.49
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 17,
+    "abs_timestamp": [
+      42.525,
+      44.025
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 18,
+    "abs_timestamp": [
+      45.18,
+      46.68
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 19,
+    "abs_timestamp": [
+      47.415,
+      48.915
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 20,
+    "abs_timestamp": [
+      49.695,
+      51.195
+    ],
+    "text": "三蛋 마지막AN Essex",
+    "pinyin": "sān dàn  마지막AN Essex"
+  },
+  {
+    "id": 21,
+    "abs_timestamp": [
+      52.335,
+      53.835
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 22,
+    "abs_timestamp": [
+      54.9,
+      56.4
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 23,
+    "abs_timestamp": [
+      57.48,
+      58.98
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 24,
+    "abs_timestamp": [
+      60.09,
+      61.59
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 25,
+    "abs_timestamp": [
+      62.7,
+      64.2
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 26,
+    "abs_timestamp": [
+      65.31,
+      66.81
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 27,
+    "abs_timestamp": [
+      67.905,
+      69.405
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 28,
+    "abs_timestamp": [
+      70.23,
+      71.73
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 29,
+    "abs_timestamp": [
+      72.72,
+      74.22
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 30,
+    "abs_timestamp": [
+      75.405,
+      76.905
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 31,
+    "abs_timestamp": [
+      78.315,
+      79.815
+    ],
+    "text": "放鬆",
+    "pinyin": "fàng sōng"
+  },
+  {
+    "id": 32,
+    "abs_timestamp": [
+      80.925,
+      82.425
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 33,
+    "abs_timestamp": [
+      83.52,
+      85.02
+    ],
+    "text": "反斷",
+    "pinyin": "fǎn duàn"
+  },
+  {
+    "id": 34,
+    "abs_timestamp": [
+      86.07,
+      87.57
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 35,
+    "abs_timestamp": [
+      88.83,
+      90.33
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 36,
+    "abs_timestamp": [
+      91.395,
+      92.895
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 37,
+    "abs_timestamp": [
+      93.975,
+      95.475
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 38,
+    "abs_timestamp": [
+      96.885,
+      98.385
+    ],
+    "text": "算了",
+    "pinyin": "suàn le"
+  },
+  {
+    "id": 39,
+    "abs_timestamp": [
+      99.6,
+      101.1
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 40,
+    "abs_timestamp": [
+      102.345,
+      103.845
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 41,
+    "abs_timestamp": [
+      105.24,
+      106.74
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 42,
+    "abs_timestamp": [
+      108.195,
+      109.695
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 43,
+    "abs_timestamp": [
+      111.045,
+      112.545
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 44,
+    "abs_timestamp": [
+      113.955,
+      115.455
+    ],
+    "text": "唱的",
+    "pinyin": "chàng de"
+  },
+  {
+    "id": 45,
+    "abs_timestamp": [
+      116.925,
+      118.425
+    ],
+    "text": "反盪",
+    "pinyin": "fǎn dàng"
+  },
+  {
+    "id": 46,
+    "abs_timestamp": [
+      119.82,
+      121.32
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 47,
+    "abs_timestamp": [
+      122.565,
+      124.065
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 48,
+    "abs_timestamp": [
+      125.295,
+      126.795
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 49,
+    "abs_timestamp": [
+      128.145,
+      129.645
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 50,
+    "abs_timestamp": [
+      131.04,
+      132.54
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 51,
+    "abs_timestamp": [
+      133.815,
+      135.315
+    ],
+    "text": "算的",
+    "pinyin": "suàn de"
+  },
+  {
+    "id": 52,
+    "abs_timestamp": [
+      136.47,
+      137.97
+    ],
+    "text": "反].",
+    "pinyin": "fǎn ]."
+  },
+  {
+    "id": 53,
+    "abs_timestamp": [
+      139.395,
+      140.895
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 54,
+    "abs_timestamp": [
+      142.23,
+      143.73
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 55,
+    "abs_timestamp": [
+      145.125,
+      146.625
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 56,
+    "abs_timestamp": [
+      148.005,
+      149.505
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 57,
+    "abs_timestamp": [
+      150.885,
+      152.385
+    ],
+    "text": "放0",
+    "pinyin": "fàng 0"
+  },
+  {
+    "id": 58,
+    "abs_timestamp": [
+      153.765,
+      155.265
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  }
+]

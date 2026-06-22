@@ -1,0 +1,470 @@
+[
+  {
+    "id": 0,
+    "abs_timestamp": [
+      5.16,
+      6.66
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 1,
+    "abs_timestamp": [
+      8.145,
+      9.645
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 2,
+    "abs_timestamp": [
+      11.655,
+      13.155
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 3,
+    "abs_timestamp": [
+      14.715,
+      16.215
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 4,
+    "abs_timestamp": [
+      17.805,
+      19.305
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 5,
+    "abs_timestamp": [
+      21.255,
+      22.755
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 6,
+    "abs_timestamp": [
+      24.405,
+      25.905
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 7,
+    "abs_timestamp": [
+      27.735,
+      29.235
+    ],
+    "text": "台湾",
+    "pinyin": "tái wān"
+  },
+  {
+    "id": 8,
+    "abs_timestamp": [
+      30.645,
+      32.144999999999996
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 9,
+    "abs_timestamp": [
+      34.005,
+      35.505
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 10,
+    "abs_timestamp": [
+      37.095,
+      38.595
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 11,
+    "abs_timestamp": [
+      40.305,
+      41.805
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 12,
+    "abs_timestamp": [
+      43.455,
+      44.955
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 13,
+    "abs_timestamp": [
+      46.44,
+      47.94
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 14,
+    "abs_timestamp": [
+      49.275,
+      50.775
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 15,
+    "abs_timestamp": [
+      52.665,
+      54.165
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 16,
+    "abs_timestamp": [
+      56.07,
+      57.57
+    ],
+    "text": "揣炒單",
+    "pinyin": "chuāi chǎo dān"
+  },
+  {
+    "id": 17,
+    "abs_timestamp": [
+      59.205,
+      60.705
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 18,
+    "abs_timestamp": [
+      62.295,
+      63.795
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 19,
+    "abs_timestamp": [
+      65.82,
+      67.32
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 20,
+    "abs_timestamp": [
+      69.225,
+      70.725
+    ],
+    "text": "差點",
+    "pinyin": "chà diǎn"
+  },
+  {
+    "id": 21,
+    "abs_timestamp": [
+      72.63,
+      74.13
+    ],
+    "text": "� melted",
+    "pinyin": "� melted"
+  },
+  {
+    "id": 22,
+    "abs_timestamp": [
+      75.99,
+      77.49
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 23,
+    "abs_timestamp": [
+      79.2,
+      80.7
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 24,
+    "abs_timestamp": [
+      82.89,
+      84.39
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 25,
+    "abs_timestamp": [
+      86.19,
+      87.69
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 26,
+    "abs_timestamp": [
+      89.355,
+      90.855
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 27,
+    "abs_timestamp": [
+      92.535,
+      94.035
+    ],
+    "text": "揉一搭",
+    "pinyin": "róu yī dā"
+  },
+  {
+    "id": 28,
+    "abs_timestamp": [
+      95.925,
+      97.425
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 29,
+    "abs_timestamp": [
+      99.24,
+      100.74
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 30,
+    "abs_timestamp": [
+      102.465,
+      103.965
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 31,
+    "abs_timestamp": [
+      106.11,
+      107.61
+    ],
+    "text": "再一段",
+    "pinyin": "zài yī duàn"
+  },
+  {
+    "id": 32,
+    "abs_timestamp": [
+      109.185,
+      110.685
+    ],
+    "text": "再見",
+    "pinyin": "zài jiàn"
+  },
+  {
+    "id": 33,
+    "abs_timestamp": [
+      112.425,
+      113.925
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 34,
+    "abs_timestamp": [
+      115.77,
+      117.27
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 35,
+    "abs_timestamp": [
+      118.95,
+      120.45
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 36,
+    "abs_timestamp": [
+      122.145,
+      123.645
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 37,
+    "abs_timestamp": [
+      125.655,
+      127.155
+    ],
+    "text": "差一單",
+    "pinyin": "chà yī dān"
+  },
+  {
+    "id": 38,
+    "abs_timestamp": [
+      128.85,
+      130.35
+    ],
+    "text": "",
+    "pinyin": ""
+  },
+  {
+    "id": 39,
+    "abs_timestamp": [
+      129.795,
+      131.295
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 40,
+    "abs_timestamp": [
+      133.095,
+      134.595
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 41,
+    "abs_timestamp": [
+      135.255,
+      136.755
+    ],
+    "text": "",
+    "pinyin": ""
+  },
+  {
+    "id": 42,
+    "abs_timestamp": [
+      136.545,
+      138.045
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 43,
+    "abs_timestamp": [
+      138.75,
+      140.25
+    ],
+    "text": "字幕by索兰娅",
+    "pinyin": "zì mù by suǒ lán yà"
+  },
+  {
+    "id": 44,
+    "abs_timestamp": [
+      140.04,
+      141.54
+    ],
+    "text": "下一單",
+    "pinyin": "xià yī dān"
+  },
+  {
+    "id": 45,
+    "abs_timestamp": [
+      140.655,
+      142.155
+    ],
+    "text": "youtubeTV 切倉",
+    "pinyin": "youtubeTV  qiè cāng"
+  },
+  {
+    "id": 46,
+    "abs_timestamp": [
+      141.36,
+      142.86
+    ],
+    "text": "字幕by索兰娅",
+    "pinyin": "zì mù by suǒ lán yà"
+  },
+  {
+    "id": 47,
+    "abs_timestamp": [
+      142.41,
+      143.91
+    ],
+    "text": "",
+    "pinyin": ""
+  },
+  {
+    "id": 48,
+    "abs_timestamp": [
+      143.085,
+      144.585
+    ],
+    "text": "next",
+    "pinyin": "next"
+  },
+  {
+    "id": 49,
+    "abs_timestamp": [
+      146.085,
+      147.585
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 50,
+    "abs_timestamp": [
+      149.07,
+      150.57
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 51,
+    "abs_timestamp": [
+      152.28,
+      153.78
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  }
+]

@@ -11,6 +11,7 @@ from pathlib import Path
 import cv2
 import mediapipe as mp
 import numpy as np
+from PIL import Image
 from tqdm import tqdm
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -19,6 +20,7 @@ if str(CODE_DIR) not in sys.path:
     sys.path.append(str(CODE_DIR))
 
 from project_paths import FISHEYE_DIR, PROCESSED_DATA_DIR, PROJECT_ROOT
+from raw_data_utils import add_image_pixel_noise, select_video_names
 
 
 SEQ_LEN = 10
@@ -164,6 +166,13 @@ def extract_sequence(video_path: Path, center_ms: float, detector_kind: str, det
         ok, frame = cap.read()
         if not ok:
             break
+        image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        image = add_image_pixel_noise(
+            image,
+            "gesture",
+            f"{video_path.name}|{float(msec):.3f}",
+        )
+        frame = cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
         landmarks = detect_landmarks(detector_kind, detector, frame)
         features.append(hand_feature_from_landmarks(landmarks))
     cap.release()
@@ -186,7 +195,8 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     detector_kind, detector = create_landmark_detector(Path(args.task_model))
     mapping = load_avi_to_mp4_map()
-    items = list(mapping.items())
+    selected_names = set(select_video_names(mapping.values()))
+    items = [(avi_name, mp4_name) for avi_name, mp4_name in mapping.items() if mp4_name in selected_names]
     if args.limit > 0:
         items = items[: args.limit]
 

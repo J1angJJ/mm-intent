@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 from project_paths import PROCESSED_DATA_DIR, PROJECT_ROOT
+from raw_pipeline import COURSE_VIDEO_NAMES, default_raw_cache_dir, prepare_raw_features
 
 
 FEATURE_PATTERNS = {
@@ -19,15 +20,15 @@ FEATURE_PATTERNS = {
 }
 
 
-def count_pattern(pattern: str) -> int:
-    return len(list(PROCESSED_DATA_DIR.glob(pattern)))
+def count_pattern(processed_data_dir: Path, pattern: str) -> int:
+    return len(list(processed_data_dir.glob(pattern)))
 
 
-def check_features(expected_count: int) -> bool:
-    print("[feature-check]")
+def check_features(processed_data_dir: Path, expected_count: int) -> bool:
+    print(f"[feature-check] dir={processed_data_dir}")
     ok = True
     for name, pattern in FEATURE_PATTERNS.items():
-        count = count_pattern(pattern)
+        count = count_pattern(processed_data_dir, pattern)
         print(f"  {name:9s} {count}/{expected_count}")
         ok = ok and count >= expected_count
     return ok
@@ -59,6 +60,14 @@ def build_env(args: argparse.Namespace) -> dict[str, str]:
         env["SMART_AR_TEST_VIDEO_NAMES"] = ",".join(args.test_video_names)
     if args.output_dir:
         env["SMART_AR_MODEL_OUTPUT_DIR"] = str(Path(args.output_dir).resolve())
+    if args.processed_data_dir:
+        env["MM_INTENT_PROCESSED_DATA_DIR"] = str(Path(args.processed_data_dir).resolve())
+    if args.dataset_dir:
+        env["MM_INTENT_DATASET_DIR"] = str(Path(args.dataset_dir).resolve())
+    if args.hololens_dir:
+        env["MM_INTENT_HOLOLENS_DIR"] = str(Path(args.hololens_dir).resolve())
+    if args.fisheye_dir:
+        env["MM_INTENT_FISHEYE_DIR"] = str(Path(args.fisheye_dir).resolve())
     if args.gesture_feature_dir:
         env["MM_INTENT_GESTURE_FEATURE_DIR"] = str(Path(args.gesture_feature_dir).resolve())
     if args.audio_feature_dir:
@@ -84,8 +93,16 @@ def build_env(args: argparse.Namespace) -> dict[str, str]:
     if args.missing_modalities:
         env["SMART_AR_MISSING_MODALITIES"] = ",".join(args.missing_modalities)
     if args.noise_modality:
-        env["SMART_AR_NOISE_MODALITY"] = args.noise_modality
-        env["SMART_AR_NOISE_LEVEL"] = str(args.noise_level)
+        if args.noise_space == "raw":
+            env["MM_INTENT_RAW_NOISE_MODALITY"] = args.noise_modality
+            env["MM_INTENT_RAW_NOISE_LEVEL"] = str(args.noise_level)
+            env["MM_INTENT_RAW_NOISE_SEED"] = str(args.noise_seed)
+            env.pop("SMART_AR_NOISE_MODALITY", None)
+            env["SMART_AR_NOISE_LEVEL"] = "0.0"
+        else:
+            env["SMART_AR_NOISE_MODALITY"] = args.noise_modality
+            env["SMART_AR_NOISE_LEVEL"] = str(args.noise_level)
+            env["SMART_AR_NOISE_SEED"] = str(args.noise_seed)
     if args.consistency_weight is not None:
         env["IMPROVED_REAL_SCENE_A2_CONSISTENCY_WEIGHT"] = str(args.consistency_weight)
     if args.consistency_mask_prob is not None:
@@ -148,8 +165,26 @@ def train_command(model: str) -> Sequence[str]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="End-to-end training entry for the MM-Intent project.")
     parser.add_argument("--model", choices=("baseline", "improved"), default="improved")
+    parser.add_argument(
+        "--input-mode",
+        choices=("features", "raw"),
+        default="features",
+        help="Use cached features or run the integrated raw-data preprocessing pipeline.",
+    )
     parser.add_argument("--expected-count", type=int, default=39)
     parser.add_argument("--extract-features", action="store_true", help="Run feature extraction if cached features are incomplete.")
+    parser.add_argument("--processed-data-dir")
+    parser.add_argument("--raw-cache-dir")
+    parser.add_argument(
+        "--base-feature-dir",
+        help="Clean raw-derived cache reused for modalities that are unchanged in a raw-noise experiment.",
+    )
+    parser.add_argument("--gesture-representation", choices=("clip", "hand_geometry"), default="clip")
+    parser.add_argument("--dataset-dir")
+    parser.add_argument("--hololens-dir")
+    parser.add_argument("--fisheye-dir")
+    parser.add_argument("--force-preprocess", action="store_true")
+    parser.add_argument("--preprocess-dry-run", action="store_true")
     parser.add_argument("--skip-feature-check", action="store_true")
     parser.add_argument("--epochs", type=int)
     parser.add_argument("--patience", type=int)
@@ -168,6 +203,8 @@ def main() -> None:
     parser.add_argument("--missing-modalities", nargs="*", default=[])
     parser.add_argument("--noise-modality", choices=("imu", "gesture", "audio", "text", "scene"))
     parser.add_argument("--noise-level", type=float, default=0.0)
+    parser.add_argument("--noise-space", choices=("feature", "raw"))
+    parser.add_argument("--noise-seed", type=int, default=42)
     parser.add_argument("--consistency-weight", type=float)
     parser.add_argument("--consistency-mask-prob", type=float)
     parser.add_argument("--consistency-noise-std", type=float)
@@ -201,26 +238,72 @@ def main() -> None:
     parser.add_argument("--supcon-target", choices=("joint", "intent", "scene"))
     parser.add_argument("--skip-test-eval", action="store_true")
     args = parser.parse_args()
+    if args.noise_space is None:
+        args.noise_space = "raw" if args.input_mode == "raw" else "feature"
+    if args.noise_space == "raw" and args.input_mode != "raw":
+        parser.error("--noise-space raw requires --input-mode raw")
+    if args.noise_level > 0.0 and not args.noise_modality:
+        parser.error("--noise-modality is required when --noise-level is positive")
+    if not 0.0 <= args.noise_level <= 1.0:
+        parser.error("--noise-level must be in [0, 1]")
+
+    raw_cache_dir: Path | None = None
+    base_feature_dir: Path | None = None
+    if args.input_mode == "raw":
+        raw_cache_dir = (
+            Path(args.raw_cache_dir).resolve()
+            if args.raw_cache_dir
+            else default_raw_cache_dir(args.noise_modality or "", args.noise_level, args.noise_seed)
+        )
+        args.processed_data_dir = str(raw_cache_dir)
+        if args.gesture_representation == "hand_geometry":
+            args.gesture_feature_dir = str(raw_cache_dir / "hand_geometry_features")
+            args.gesture_feature_dim = 96
+        if args.base_feature_dir:
+            base_feature_dir = Path(args.base_feature_dir).resolve()
+        elif args.noise_modality and args.noise_level > 0.0:
+            dataset_root = Path(args.dataset_dir).resolve() if args.dataset_dir else PROJECT_ROOT / "dataset"
+            base_feature_dir = (dataset_root / "AR_Data_Process3.0" / "data_full").resolve()
     args.missing_distill_probs = [
         (modality, float(value))
         for modality, value in args.missing_distill_prob
     ]
 
     env = build_env(args)
-    if not args.skip_feature_check:
-        features_ready = check_features(args.expected_count)
+    processed_data_dir = Path(env.get("MM_INTENT_PROCESSED_DATA_DIR", str(PROCESSED_DATA_DIR))).resolve()
+    if args.input_mode == "raw":
+        assert raw_cache_dir is not None
+        env["MM_INTENT_SCENE_CACHE_DIR"] = str(raw_cache_dir / "scene_features")
+        prepare_raw_features(
+            output_dir=raw_cache_dir,
+            video_names=COURSE_VIDEO_NAMES,
+            noise_modality=args.noise_modality or "",
+            noise_level=args.noise_level,
+            noise_seed=args.noise_seed,
+            base_env=env,
+            force=args.force_preprocess,
+            dry_run=args.preprocess_dry_run,
+            base_feature_dir=base_feature_dir,
+            gesture_representation=args.gesture_representation,
+        )
+        if args.preprocess_dry_run:
+            print("[train] preprocessing dry-run complete; training was not started.")
+            return
+    elif not args.skip_feature_check:
+        features_ready = check_features(processed_data_dir, args.expected_count)
         if not features_ready:
             if not args.extract_features:
                 raise SystemExit("Cached features are incomplete. Re-run with --extract-features or generate features first.")
             run_commands(feature_commands(), env)
-            if not check_features(args.expected_count):
-                raise SystemExit("Feature extraction finished but cached features are still incomplete.")
 
-    print(f"[train] model={args.model}")
+    if not args.skip_feature_check and not check_features(processed_data_dir, args.expected_count):
+        raise SystemExit("Feature extraction finished but cached features are still incomplete.")
+
+    print(f"[train] model={args.model} input_mode={args.input_mode}")
     if args.missing_modalities:
         print(f"[train] missing_modalities={','.join(args.missing_modalities)}")
     if args.noise_modality:
-        print(f"[train] noise={args.noise_modality}:{args.noise_level}")
+        print(f"[train] noise={args.noise_modality}:{args.noise_level} space={args.noise_space}")
     run_commands((train_command(args.model),), env)
 
 

@@ -1,0 +1,164 @@
+[
+  {
+    "id": 0,
+    "abs_timestamp": [
+      9.66,
+      11.16
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 1,
+    "abs_timestamp": [
+      12.255,
+      13.755
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 2,
+    "abs_timestamp": [
+      15.105,
+      16.605
+    ],
+    "text": "说笑",
+    "pinyin": "shuō xiào"
+  },
+  {
+    "id": 3,
+    "abs_timestamp": [
+      18.015,
+      19.515
+    ],
+    "text": "说笑",
+    "pinyin": "shuō xiào"
+  },
+  {
+    "id": 4,
+    "abs_timestamp": [
+      21.0,
+      22.5
+    ],
+    "text": "说笑",
+    "pinyin": "shuō xiào"
+  },
+  {
+    "id": 5,
+    "abs_timestamp": [
+      23.655,
+      25.155
+    ],
+    "text": "说笑",
+    "pinyin": "shuō xiào"
+  },
+  {
+    "id": 6,
+    "abs_timestamp": [
+      24.075,
+      25.575
+    ],
+    "text": "说笑",
+    "pinyin": "shuō xiào"
+  },
+  {
+    "id": 7,
+    "abs_timestamp": [
+      26.64,
+      28.14
+    ],
+    "text": "说笑",
+    "pinyin": "shuō xiào"
+  },
+  {
+    "id": 8,
+    "abs_timestamp": [
+      28.95,
+      30.45
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 9,
+    "abs_timestamp": [
+      29.28,
+      30.78
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 10,
+    "abs_timestamp": [
+      31.619999999999997,
+      33.12
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 11,
+    "abs_timestamp": [
+      34.275,
+      35.775
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 12,
+    "abs_timestamp": [
+      37.02,
+      38.52
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 13,
+    "abs_timestamp": [
+      39.72,
+      41.22
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 14,
+    "abs_timestamp": [
+      42.42,
+      43.92
+    ],
+    "text": "说笑",
+    "pinyin": "shuō xiào"
+  },
+  {
+    "id": 15,
+    "abs_timestamp": [
+      44.58,
+      46.08
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 16,
+    "abs_timestamp": [
+      47.535,
+      49.035
+    ],
+    "text": "说一下",
+    "pinyin": "shuō yī xià"
+  },
+  {
+    "id": 17,
+    "abs_timestamp": [
+      50.13,
+      51.63
+    ],
+    "text": "说笑",
+    "pinyin": "shuō xiào"
+  }
+]

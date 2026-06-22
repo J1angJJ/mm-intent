@@ -1,0 +1,488 @@
+[
+  {
+    "id": 0,
+    "abs_timestamp": [
+      1.455,
+      2.955
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 1,
+    "abs_timestamp": [
+      3.84,
+      5.34
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 2,
+    "abs_timestamp": [
+      6.09,
+      7.59
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 3,
+    "abs_timestamp": [
+      8.46,
+      9.96
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 4,
+    "abs_timestamp": [
+      10.8,
+      12.3
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 5,
+    "abs_timestamp": [
+      13.11,
+      14.61
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 6,
+    "abs_timestamp": [
+      15.344999999999999,
+      16.845
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 7,
+    "abs_timestamp": [
+      17.535,
+      19.035
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 8,
+    "abs_timestamp": [
+      19.68,
+      21.18
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 9,
+    "abs_timestamp": [
+      21.96,
+      23.46
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 10,
+    "abs_timestamp": [
+      24.27,
+      25.77
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 11,
+    "abs_timestamp": [
+      26.565,
+      28.065
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 12,
+    "abs_timestamp": [
+      28.755,
+      30.255
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 13,
+    "abs_timestamp": [
+      30.975,
+      32.475
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 14,
+    "abs_timestamp": [
+      33.225,
+      34.725
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 15,
+    "abs_timestamp": [
+      35.4,
+      36.9
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 16,
+    "abs_timestamp": [
+      37.59,
+      39.09
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 17,
+    "abs_timestamp": [
+      39.72,
+      41.22
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 18,
+    "abs_timestamp": [
+      42.015,
+      43.515
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 19,
+    "abs_timestamp": [
+      44.22,
+      45.72
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 20,
+    "abs_timestamp": [
+      46.71,
+      48.21
+    ],
+    "text": "彩蛋",
+    "pinyin": "cǎi dàn"
+  },
+  {
+    "id": 21,
+    "abs_timestamp": [
+      48.9,
+      50.4
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 22,
+    "abs_timestamp": [
+      51.105,
+      52.605
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 23,
+    "abs_timestamp": [
+      53.28,
+      54.78
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 24,
+    "abs_timestamp": [
+      55.425,
+      56.925
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 25,
+    "abs_timestamp": [
+      57.63,
+      59.13
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 26,
+    "abs_timestamp": [
+      59.745,
+      61.245
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 27,
+    "abs_timestamp": [
+      61.92,
+      63.42
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 28,
+    "abs_timestamp": [
+      64.035,
+      65.535
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 29,
+    "abs_timestamp": [
+      66.255,
+      67.755
+    ],
+    "text": "彩蛋",
+    "pinyin": "cǎi dàn"
+  },
+  {
+    "id": 30,
+    "abs_timestamp": [
+      68.4,
+      69.9
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 31,
+    "abs_timestamp": [
+      70.68,
+      72.18
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 32,
+    "abs_timestamp": [
+      72.795,
+      74.295
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 33,
+    "abs_timestamp": [
+      74.94,
+      76.44
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 34,
+    "abs_timestamp": [
+      77.13,
+      78.63
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 35,
+    "abs_timestamp": [
+      79.41,
+      80.91
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 36,
+    "abs_timestamp": [
+      81.57,
+      83.07
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 37,
+    "abs_timestamp": [
+      83.82,
+      85.32
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 38,
+    "abs_timestamp": [
+      85.89,
+      87.39
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 39,
+    "abs_timestamp": [
+      88.155,
+      89.655
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 40,
+    "abs_timestamp": [
+      90.36,
+      91.86
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 41,
+    "abs_timestamp": [
+      92.52,
+      94.02
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 42,
+    "abs_timestamp": [
+      94.71,
+      96.21
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 43,
+    "abs_timestamp": [
+      97.08,
+      98.58
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 44,
+    "abs_timestamp": [
+      99.24,
+      100.74
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 45,
+    "abs_timestamp": [
+      101.43,
+      102.93
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 46,
+    "abs_timestamp": [
+      103.59,
+      105.09
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 47,
+    "abs_timestamp": [
+      105.84,
+      107.34
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 48,
+    "abs_timestamp": [
+      108.09,
+      109.59
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 49,
+    "abs_timestamp": [
+      110.34,
+      111.84
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 50,
+    "abs_timestamp": [
+      112.47,
+      113.97
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 51,
+    "abs_timestamp": [
+      114.645,
+      116.145
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 52,
+    "abs_timestamp": [
+      116.82,
+      118.32
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  },
+  {
+    "id": 53,
+    "abs_timestamp": [
+      119.04,
+      120.54
+    ],
+    "text": "菜單",
+    "pinyin": "cài dān"
+  }
+]

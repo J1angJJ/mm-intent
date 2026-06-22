@@ -1,0 +1,542 @@
+[
+  {
+    "id": 0,
+    "abs_timestamp": [
+      9.0,
+      10.5
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 1,
+    "abs_timestamp": [
+      11.19,
+      12.69
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 2,
+    "abs_timestamp": [
+      13.485,
+      14.985
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 3,
+    "abs_timestamp": [
+      15.809999999999999,
+      17.31
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 4,
+    "abs_timestamp": [
+      18.12,
+      19.62
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 5,
+    "abs_timestamp": [
+      20.34,
+      21.84
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 6,
+    "abs_timestamp": [
+      22.62,
+      24.12
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 7,
+    "abs_timestamp": [
+      24.855,
+      26.355
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 8,
+    "abs_timestamp": [
+      27.135,
+      28.635
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 9,
+    "abs_timestamp": [
+      29.43,
+      30.93
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 10,
+    "abs_timestamp": [
+      31.725,
+      33.225
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 11,
+    "abs_timestamp": [
+      33.93,
+      35.43
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 12,
+    "abs_timestamp": [
+      36.195,
+      37.695
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 13,
+    "abs_timestamp": [
+      38.325,
+      39.825
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 14,
+    "abs_timestamp": [
+      40.59,
+      42.09
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 15,
+    "abs_timestamp": [
+      42.78,
+      44.28
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 16,
+    "abs_timestamp": [
+      45.03,
+      46.53
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 17,
+    "abs_timestamp": [
+      47.19,
+      48.69
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 18,
+    "abs_timestamp": [
+      49.275,
+      50.775
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 19,
+    "abs_timestamp": [
+      51.405,
+      52.905
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 20,
+    "abs_timestamp": [
+      53.655,
+      55.155
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 21,
+    "abs_timestamp": [
+      55.755,
+      57.255
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 22,
+    "abs_timestamp": [
+      57.99,
+      59.49
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 23,
+    "abs_timestamp": [
+      60.18,
+      61.68
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 24,
+    "abs_timestamp": [
+      62.31,
+      63.81
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 25,
+    "abs_timestamp": [
+      64.575,
+      66.075
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 26,
+    "abs_timestamp": [
+      66.81,
+      68.31
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 27,
+    "abs_timestamp": [
+      70.395,
+      71.895
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 28,
+    "abs_timestamp": [
+      72.6,
+      74.1
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 29,
+    "abs_timestamp": [
+      74.775,
+      76.275
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 30,
+    "abs_timestamp": [
+      77.025,
+      78.525
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 31,
+    "abs_timestamp": [
+      79.23,
+      80.73
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 32,
+    "abs_timestamp": [
+      81.48,
+      82.98
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 33,
+    "abs_timestamp": [
+      83.55,
+      85.05
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 34,
+    "abs_timestamp": [
+      85.74,
+      87.24
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 35,
+    "abs_timestamp": [
+      88.02,
+      89.52
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 36,
+    "abs_timestamp": [
+      90.285,
+      91.785
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 37,
+    "abs_timestamp": [
+      92.415,
+      93.915
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 38,
+    "abs_timestamp": [
+      94.62,
+      96.12
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 39,
+    "abs_timestamp": [
+      96.75,
+      98.25
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 40,
+    "abs_timestamp": [
+      99.045,
+      100.545
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 41,
+    "abs_timestamp": [
+      101.295,
+      102.795
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 42,
+    "abs_timestamp": [
+      103.5,
+      105.0
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 43,
+    "abs_timestamp": [
+      105.51,
+      107.01
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 44,
+    "abs_timestamp": [
+      107.475,
+      108.975
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 45,
+    "abs_timestamp": [
+      112.08,
+      113.58
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 46,
+    "abs_timestamp": [
+      114.24,
+      115.74
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 47,
+    "abs_timestamp": [
+      116.34,
+      117.84
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 48,
+    "abs_timestamp": [
+      118.485,
+      119.985
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 49,
+    "abs_timestamp": [
+      120.57,
+      122.07
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 50,
+    "abs_timestamp": [
+      122.73,
+      124.23
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 51,
+    "abs_timestamp": [
+      124.89,
+      126.39
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 52,
+    "abs_timestamp": [
+      127.005,
+      128.505
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 53,
+    "abs_timestamp": [
+      129.15,
+      130.65
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 54,
+    "abs_timestamp": [
+      131.295,
+      132.795
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 55,
+    "abs_timestamp": [
+      133.38,
+      134.88
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 56,
+    "abs_timestamp": [
+      135.525,
+      137.025
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 57,
+    "abs_timestamp": [
+      137.61,
+      139.11
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 58,
+    "abs_timestamp": [
+      139.845,
+      141.345
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  },
+  {
+    "id": 59,
+    "abs_timestamp": [
+      141.93,
+      143.43
+    ],
+    "text": "取消",
+    "pinyin": "qǔ xiāo"
+  }
+]

@@ -11,6 +11,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from project_paths import HOLOLENS_DIR, PROCESSED_DATA_DIR
+from raw_data_utils import add_audio_waveform_noise, select_video_names
 
 # ============================
 # 1. 配置 (适配 3.0 架构)
@@ -76,6 +77,7 @@ VIDEO_NAMES = [
     "interaction_20260306_085830.mp4",
     "interaction_20260306_090441.mp4",
 ]
+VIDEO_NAMES = select_video_names(VIDEO_NAMES)
 
 # ============================
 # 2. 音频提取工具
@@ -103,12 +105,13 @@ def get_video_start_dt(video_name):
 # ============================
 # 3. 核心 MFCC 提取 (39 维)
 # ============================
-def extract_mfcc_39d(wav_path, metadata_path, video_start_dt):
+def extract_mfcc_39d(wav_path, metadata_path, video_start_dt, source_key=""):
     """读取 Metadata 时间戳并提取 MFCC"""
     data = np.load(metadata_path, allow_pickle=True).item()
     approx_ts_list = data["approx_timestamps"]
     
     audio, sr = librosa.load(wav_path, sr=16000, mono=True)
+    audio = add_audio_waveform_noise(audio, source_key or str(wav_path))
     results = []
 
     for idx, ts_str in enumerate(approx_ts_list):
@@ -193,7 +196,7 @@ if __name__ == "__main__":
         # 2. 提取特征
         try:
             start_dt = get_video_start_dt(video_name)
-            audio_results = extract_mfcc_39d(wav_path, meta_full_path, start_dt)
+            audio_results = extract_mfcc_39d(wav_path, meta_full_path, start_dt, video_name)
             
             if audio_results:
                 # 3. 保存结果

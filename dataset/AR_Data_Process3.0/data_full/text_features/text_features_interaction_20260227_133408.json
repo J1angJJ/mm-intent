@@ -1,0 +1,686 @@
+[
+  {
+    "id": 0,
+    "abs_timestamp": [
+      0.9750000000000001,
+      2.475
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 1,
+    "abs_timestamp": [
+      3.135,
+      4.635
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 2,
+    "abs_timestamp": [
+      4.995,
+      6.495
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 3,
+    "abs_timestamp": [
+      6.87,
+      8.370000000000001
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 4,
+    "abs_timestamp": [
+      8.67,
+      10.17
+    ],
+    "text": "犯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 5,
+    "abs_timestamp": [
+      10.605,
+      12.105
+    ],
+    "text": "犯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 6,
+    "abs_timestamp": [
+      12.255,
+      13.755
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 7,
+    "abs_timestamp": [
+      14.145,
+      15.645
+    ],
+    "text": "饭大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 8,
+    "abs_timestamp": [
+      16.23,
+      17.73
+    ],
+    "text": "犯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 9,
+    "abs_timestamp": [
+      18.54,
+      20.04
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 10,
+    "abs_timestamp": [
+      20.835,
+      22.335
+    ],
+    "text": "反對吧",
+    "pinyin": "fǎn duì ba"
+  },
+  {
+    "id": 11,
+    "abs_timestamp": [
+      23.13,
+      24.63
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 12,
+    "abs_timestamp": [
+      25.215,
+      26.715
+    ],
+    "text": "幻大",
+    "pinyin": "huàn dà"
+  },
+  {
+    "id": 13,
+    "abs_timestamp": [
+      27.45,
+      28.95
+    ],
+    "text": "饭大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 14,
+    "abs_timestamp": [
+      29.535,
+      31.035
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 15,
+    "abs_timestamp": [
+      31.590000000000003,
+      33.09
+    ],
+    "text": "饭大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 16,
+    "abs_timestamp": [
+      33.63,
+      35.13
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 17,
+    "abs_timestamp": [
+      35.97,
+      37.47
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 18,
+    "abs_timestamp": [
+      38.175,
+      39.675
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 19,
+    "abs_timestamp": [
+      40.32,
+      41.82
+    ],
+    "text": "飯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 20,
+    "abs_timestamp": [
+      42.36,
+      43.86
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 21,
+    "abs_timestamp": [
+      44.46,
+      45.96
+    ],
+    "text": "Fantastic",
+    "pinyin": "Fantastic"
+  },
+  {
+    "id": 22,
+    "abs_timestamp": [
+      46.605,
+      48.105
+    ],
+    "text": "犯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 23,
+    "abs_timestamp": [
+      48.615,
+      50.115
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 24,
+    "abs_timestamp": [
+      50.865,
+      52.365
+    ],
+    "text": "完蛋",
+    "pinyin": "wán dàn"
+  },
+  {
+    "id": 25,
+    "abs_timestamp": [
+      53.01,
+      54.51
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 26,
+    "abs_timestamp": [
+      55.125,
+      56.625
+    ],
+    "text": "反 star",
+    "pinyin": "fǎn  star"
+  },
+  {
+    "id": 27,
+    "abs_timestamp": [
+      57.27,
+      58.77
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 28,
+    "abs_timestamp": [
+      59.445,
+      60.945
+    ],
+    "text": "頒大",
+    "pinyin": "bān dà"
+  },
+  {
+    "id": 29,
+    "abs_timestamp": [
+      61.53,
+      63.03
+    ],
+    "text": "饭大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 30,
+    "abs_timestamp": [
+      63.705,
+      65.205
+    ],
+    "text": "反大",
+    "pinyin": "fǎn dà"
+  },
+  {
+    "id": 31,
+    "abs_timestamp": [
+      65.88,
+      67.38
+    ],
+    "text": "犯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 32,
+    "abs_timestamp": [
+      67.905,
+      69.405
+    ],
+    "text": "煩大",
+    "pinyin": "fán dà"
+  },
+  {
+    "id": 33,
+    "abs_timestamp": [
+      69.915,
+      71.415
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 34,
+    "abs_timestamp": [
+      72.165,
+      73.665
+    ],
+    "text": "反大",
+    "pinyin": "fǎn dà"
+  },
+  {
+    "id": 35,
+    "abs_timestamp": [
+      74.31,
+      75.81
+    ],
+    "text": "飯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 36,
+    "abs_timestamp": [
+      76.35,
+      77.85
+    ],
+    "text": "犯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 37,
+    "abs_timestamp": [
+      78.36,
+      79.86
+    ],
+    "text": "飯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 38,
+    "abs_timestamp": [
+      80.31,
+      81.81
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 39,
+    "abs_timestamp": [
+      82.35,
+      83.85
+    ],
+    "text": "饭大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 40,
+    "abs_timestamp": [
+      84.42,
+      85.92
+    ],
+    "text": "犯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 41,
+    "abs_timestamp": [
+      86.49,
+      87.99
+    ],
+    "text": "飯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 42,
+    "abs_timestamp": [
+      88.56,
+      90.06
+    ],
+    "text": "散大",
+    "pinyin": "sàn dà"
+  },
+  {
+    "id": 43,
+    "abs_timestamp": [
+      90.6,
+      92.1
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 44,
+    "abs_timestamp": [
+      92.73,
+      94.23
+    ],
+    "text": "犯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 45,
+    "abs_timestamp": [
+      94.875,
+      96.375
+    ],
+    "text": "放大",
+    "pinyin": "fàng dà"
+  },
+  {
+    "id": 46,
+    "abs_timestamp": [
+      96.975,
+      98.475
+    ],
+    "text": "反弹",
+    "pinyin": "fǎn tán"
+  },
+  {
+    "id": 47,
+    "abs_timestamp": [
+      99.015,
+      100.515
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 48,
+    "abs_timestamp": [
+      101.145,
+      102.645
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 49,
+    "abs_timestamp": [
+      103.215,
+      104.715
+    ],
+    "text": "Fantastic",
+    "pinyin": "Fantastic"
+  },
+  {
+    "id": 50,
+    "abs_timestamp": [
+      105.39,
+      106.89
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 51,
+    "abs_timestamp": [
+      107.52,
+      109.02
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 52,
+    "abs_timestamp": [
+      109.65,
+      111.15
+    ],
+    "text": "反正",
+    "pinyin": "fǎn zhèng"
+  },
+  {
+    "id": 53,
+    "abs_timestamp": [
+      111.51,
+      113.01
+    ],
+    "text": "放 contagious",
+    "pinyin": "fàng  contagious"
+  },
+  {
+    "id": 54,
+    "abs_timestamp": [
+      113.46,
+      114.96
+    ],
+    "text": "泛大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 55,
+    "abs_timestamp": [
+      115.395,
+      116.895
+    ],
+    "text": "饭大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 56,
+    "abs_timestamp": [
+      117.36,
+      118.86
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 57,
+    "abs_timestamp": [
+      119.34,
+      120.84
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 58,
+    "abs_timestamp": [
+      121.2,
+      122.7
+    ],
+    "text": "飯到",
+    "pinyin": "fàn dào"
+  },
+  {
+    "id": 59,
+    "abs_timestamp": [
+      122.985,
+      124.485
+    ],
+    "text": "飯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 60,
+    "abs_timestamp": [
+      125.085,
+      126.585
+    ],
+    "text": "散到",
+    "pinyin": "sàn dào"
+  },
+  {
+    "id": 61,
+    "abs_timestamp": [
+      127.02,
+      128.51999999999998
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 62,
+    "abs_timestamp": [
+      129.135,
+      130.635
+    ],
+    "text": "散大",
+    "pinyin": "sàn dà"
+  },
+  {
+    "id": 63,
+    "abs_timestamp": [
+      131.145,
+      132.645
+    ],
+    "text": "分¿da?",
+    "pinyin": "fēn ¿da?"
+  },
+  {
+    "id": 64,
+    "abs_timestamp": [
+      133.215,
+      134.715
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 65,
+    "abs_timestamp": [
+      135.135,
+      136.635
+    ],
+    "text": "饭大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 66,
+    "abs_timestamp": [
+      137.145,
+      138.645
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 67,
+    "abs_timestamp": [
+      138.915,
+      140.415
+    ],
+    "text": "犯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 68,
+    "abs_timestamp": [
+      140.985,
+      142.485
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 69,
+    "abs_timestamp": [
+      142.785,
+      144.285
+    ],
+    "text": "不然大",
+    "pinyin": "bù rán dà"
+  },
+  {
+    "id": 70,
+    "abs_timestamp": [
+      144.705,
+      146.205
+    ],
+    "text": "散到",
+    "pinyin": "sàn dào"
+  },
+  {
+    "id": 71,
+    "abs_timestamp": [
+      146.67,
+      148.17
+    ],
+    "text": "饭大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 72,
+    "abs_timestamp": [
+      148.53,
+      150.03
+    ],
+    "text": "犯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 73,
+    "abs_timestamp": [
+      148.92,
+      150.42
+    ],
+    "text": "犯大",
+    "pinyin": "fàn dà"
+  },
+  {
+    "id": 74,
+    "abs_timestamp": [
+      150.96,
+      152.46
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  },
+  {
+    "id": 75,
+    "abs_timestamp": [
+      153.045,
+      154.545
+    ],
+    "text": "算大",
+    "pinyin": "suàn dà"
+  }
+]

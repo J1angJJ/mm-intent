@@ -14,6 +14,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from project_paths import CLIP_MODEL_NAME_OR_PATH, FISHEYE_DIR, PROCESSED_DATA_DIR, PROJECT_ROOT, configure_hf_cache
+from raw_data_utils import add_image_pixel_noise, select_video_names
 
 configure_hf_cache()
 
@@ -204,6 +205,11 @@ def extract_clip_sequence(video_path, center_ms):
         
         # 预处理与特征提取
         img_pil = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        img_pil = add_image_pixel_noise(
+            img_pil,
+            "gesture",
+            f"{Path(video_path).name}|{float(msec):.3f}",
+        )
         hand_box = crop_hand(img_pil, msec)
         
         inputs = clip_processor(images=hand_box.convert("RGB"), return_tensors="pt").to(device)
@@ -246,7 +252,10 @@ def get_avi_sync_ms(avi_path, utc_target):
 
 # ==================== 4. 主执行流 ====================
 if __name__ == "__main__":
+    selected_names = set(select_video_names(AVI_TO_MP4_MAP.values()))
     for avi_name, mp4_name in AVI_TO_MP4_MAP.items():
+        if mp4_name not in selected_names:
+            continue
         mp4_base = os.path.splitext(mp4_name)[0]
         input_npy_path = os.path.join(INPUT_DATA_DIR, f"features_timestamp_{mp4_base}.npy")
         # 确保路径拼接正确

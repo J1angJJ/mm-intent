@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+from pathlib import Path
 
 from project_paths import MODEL_OUTPUT_ROOT, PROJECT_ROOT
 
@@ -11,14 +12,26 @@ MODALITIES = ("imu", "gesture", "audio", "text", "scene")
 NOISE_LEVELS = (0.2, 0.4, 0.6)
 
 
+def experiment_output_dir(args: argparse.Namespace, modality: str, level: float) -> Path:
+    percent = int(round(level * 100))
+    experiment_root = "raw_noise_experiments" if args.noise_space == "raw" else "noise_experiments"
+    return MODEL_OUTPUT_ROOT / experiment_root / args.output_model_name / f"{modality}_noise_{percent}"
+
+
 def build_command(args: argparse.Namespace, modality: str, level: float) -> list[str]:
     percent = int(round(level * 100))
-    output_dir = MODEL_OUTPUT_ROOT / "noise_experiments" / args.output_model_name / f"{modality}_noise_{percent}"
+    output_dir = experiment_output_dir(args, modality, level)
     command = [
         sys.executable,
         "code/train.py",
         "--model",
         args.model,
+        "--input-mode",
+        args.input_mode,
+        "--noise-space",
+        args.noise_space,
+        "--gesture-representation",
+        args.gesture_representation,
         "--output-dir",
         str(output_dir),
         "--epochs",
@@ -30,6 +43,23 @@ def build_command(args: argparse.Namespace, modality: str, level: float) -> list
         "--noise-level",
         str(level),
     ]
+    if args.input_mode == "raw" and args.raw_cache_root:
+        suffix = "_hand_geometry" if args.gesture_representation == "hand_geometry" else ""
+        raw_cache_dir = Path(args.raw_cache_root) / f"{modality}_noise_{percent}_seed{args.noise_seed}{suffix}"
+        command.extend(["--raw-cache-dir", str(raw_cache_dir)])
+    if args.base_feature_dir:
+        command.extend(["--base-feature-dir", args.base_feature_dir])
+    command.extend(["--noise-seed", str(args.noise_seed)])
+    if args.force_preprocess:
+        command.append("--force-preprocess")
+    if args.preprocess_dry_run:
+        command.append("--preprocess-dry-run")
+    if args.dataset_dir:
+        command.extend(["--dataset-dir", args.dataset_dir])
+    if args.hololens_dir:
+        command.extend(["--hololens-dir", args.hololens_dir])
+    if args.fisheye_dir:
+        command.extend(["--fisheye-dir", args.fisheye_dir])
     if args.skip_test_eval:
         command.append("--skip-test-eval")
     if args.skip_feature_check:
@@ -102,6 +132,20 @@ def build_command(args: argparse.Namespace, modality: str, level: float) -> list
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run single-modality noise experiments.")
     parser.add_argument("--model", choices=("baseline", "improved"), default="improved")
+    parser.add_argument("--input-mode", choices=("raw", "features"), default="raw")
+    parser.add_argument("--noise-space", choices=("raw", "feature"))
+    parser.add_argument("--noise-seed", type=int, default=42)
+    parser.add_argument("--gesture-representation", choices=("clip", "hand_geometry"), default="clip")
+    parser.add_argument("--raw-cache-root", default=str(MODEL_OUTPUT_ROOT / "raw_feature_cache"))
+    parser.add_argument(
+        "--base-feature-dir",
+        default=str(PROJECT_ROOT / "dataset" / "AR_Data_Process3.0" / "data_full"),
+    )
+    parser.add_argument("--dataset-dir")
+    parser.add_argument("--hololens-dir")
+    parser.add_argument("--fisheye-dir")
+    parser.add_argument("--force-preprocess", action="store_true")
+    parser.add_argument("--preprocess-dry-run", action="store_true")
     parser.add_argument("--output-model-name", default=None)
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--patience", type=int, default=5)
@@ -139,7 +183,12 @@ def main() -> None:
     parser.add_argument("--supcon-temperature", type=float)
     parser.add_argument("--supcon-target", choices=("joint", "intent", "scene"))
     parser.add_argument("--execute", action="store_true", help="Actually run commands. Default only prints them.")
+    parser.add_argument("--skip-existing", action="store_true", help="Skip conditions with a completed metrics.json.")
     args = parser.parse_args()
+    if args.noise_space is None:
+        args.noise_space = "raw" if args.input_mode == "raw" else "feature"
+    if args.noise_space == "raw" and args.input_mode != "raw":
+        parser.error("--noise-space raw requires --input-mode raw")
     args.missing_distill_prob = [
         (modality, float(probability))
         for modality, probability in args.missing_distill_prob
@@ -153,6 +202,10 @@ def main() -> None:
         f"experiments={len(jobs)} execute={args.execute}"
     )
     for index, (modality, level) in enumerate(jobs, start=1):
+        output_dir = experiment_output_dir(args, modality, level)
+        if args.skip_existing and (output_dir / "metrics.json").exists():
+            print(f"[{index:02d}/{len(jobs):02d}] [skip-existing] {output_dir}")
+            continue
         command = build_command(args, modality, level)
         print(f"[{index:02d}/{len(jobs):02d}]", " ".join(command), flush=True)
         if args.execute:

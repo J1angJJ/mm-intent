@@ -1,0 +1,461 @@
+[
+  {
+    "id": 0,
+    "abs_timestamp": [
+      11.565,
+      13.065
+    ],
+    "text": "花碧",
+    "pinyin": "huā bì"
+  },
+  {
+    "id": 1,
+    "abs_timestamp": [
+      14.895,
+      16.395
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 2,
+    "abs_timestamp": [
+      17.445,
+      18.945
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 3,
+    "abs_timestamp": [
+      20.235,
+      21.735
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 4,
+    "abs_timestamp": [
+      22.935,
+      24.435
+    ],
+    "text": "話筆",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 5,
+    "abs_timestamp": [
+      25.5,
+      27.0
+    ],
+    "text": "maybe",
+    "pinyin": "maybe"
+  },
+  {
+    "id": 6,
+    "abs_timestamp": [
+      27.99,
+      29.49
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 7,
+    "abs_timestamp": [
+      30.63,
+      32.129999999999995
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 8,
+    "abs_timestamp": [
+      33.075,
+      34.575
+    ],
+    "text": "花筆",
+    "pinyin": "huā bǐ"
+  },
+  {
+    "id": 9,
+    "abs_timestamp": [
+      35.64,
+      37.14
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 10,
+    "abs_timestamp": [
+      38.1,
+      39.6
+    ],
+    "text": "化碧",
+    "pinyin": "huà bì"
+  },
+  {
+    "id": 11,
+    "abs_timestamp": [
+      40.755,
+      42.255
+    ],
+    "text": "化碧",
+    "pinyin": "huà bì"
+  },
+  {
+    "id": 12,
+    "abs_timestamp": [
+      43.44,
+      44.94
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 13,
+    "abs_timestamp": [
+      46.23,
+      47.73
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 14,
+    "abs_timestamp": [
+      48.9,
+      50.4
+    ],
+    "text": "花ES词曲子",
+    "pinyin": "huā ES cí qǔ zi"
+  },
+  {
+    "id": 15,
+    "abs_timestamp": [
+      51.45,
+      52.95
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 16,
+    "abs_timestamp": [
+      53.91,
+      55.41
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 17,
+    "abs_timestamp": [
+      56.52,
+      58.02
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 18,
+    "abs_timestamp": [
+      59.115,
+      60.615
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 19,
+    "abs_timestamp": [
+      61.8,
+      63.3
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 20,
+    "abs_timestamp": [
+      64.2,
+      65.7
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 21,
+    "abs_timestamp": [
+      66.99,
+      68.49
+    ],
+    "text": "化別",
+    "pinyin": "huà bié"
+  },
+  {
+    "id": 22,
+    "abs_timestamp": [
+      69.03,
+      70.53
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 23,
+    "abs_timestamp": [
+      71.475,
+      72.975
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 24,
+    "abs_timestamp": [
+      73.89,
+      75.39
+    ],
+    "text": "花比",
+    "pinyin": "huā bǐ"
+  },
+  {
+    "id": 25,
+    "abs_timestamp": [
+      76.26,
+      77.76
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 26,
+    "abs_timestamp": [
+      78.66,
+      80.16
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 27,
+    "abs_timestamp": [
+      81.03,
+      82.53
+    ],
+    "text": "花臂",
+    "pinyin": "huā bì"
+  },
+  {
+    "id": 28,
+    "abs_timestamp": [
+      83.355,
+      84.855
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 29,
+    "abs_timestamp": [
+      85.755,
+      87.255
+    ],
+    "text": "话别",
+    "pinyin": "huà bié"
+  },
+  {
+    "id": 30,
+    "abs_timestamp": [
+      88.02,
+      89.52
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 31,
+    "abs_timestamp": [
+      90.795,
+      92.295
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 32,
+    "abs_timestamp": [
+      93.3,
+      94.8
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 33,
+    "abs_timestamp": [
+      96.105,
+      97.605
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 34,
+    "abs_timestamp": [
+      98.565,
+      100.065
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 35,
+    "abs_timestamp": [
+      100.935,
+      102.435
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 36,
+    "abs_timestamp": [
+      103.59,
+      105.09
+    ],
+    "text": "花臂",
+    "pinyin": "huā bì"
+  },
+  {
+    "id": 37,
+    "abs_timestamp": [
+      106.185,
+      107.685
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 38,
+    "abs_timestamp": [
+      108.9,
+      110.4
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 39,
+    "abs_timestamp": [
+      111.405,
+      112.905
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 40,
+    "abs_timestamp": [
+      114.195,
+      115.695
+    ],
+    "text": "画B",
+    "pinyin": "huà B"
+  },
+  {
+    "id": 41,
+    "abs_timestamp": [
+      116.79,
+      118.29
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 42,
+    "abs_timestamp": [
+      119.475,
+      120.975
+    ],
+    "text": "花臂",
+    "pinyin": "huā bì"
+  },
+  {
+    "id": 43,
+    "abs_timestamp": [
+      122.01,
+      123.51
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 44,
+    "abs_timestamp": [
+      124.26,
+      125.76
+    ],
+    "text": "画笔",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 45,
+    "abs_timestamp": [
+      126.945,
+      128.445
+    ],
+    "text": "話筆",
+    "pinyin": "huà bǐ"
+  },
+  {
+    "id": 46,
+    "abs_timestamp": [
+      129.255,
+      130.755
+    ],
+    "text": "花的",
+    "pinyin": "huā de"
+  },
+  {
+    "id": 47,
+    "abs_timestamp": [
+      131.19,
+      132.69
+    ],
+    "text": "一 二 三",
+    "pinyin": "yī   èr   sān"
+  },
+  {
+    "id": 48,
+    "abs_timestamp": [
+      131.745,
+      133.245
+    ],
+    "text": "NOT UNDER THE SAME LAUGHTER",
+    "pinyin": "NOT UNDER THE SAME LAUGHTER"
+  },
+  {
+    "id": 49,
+    "abs_timestamp": [
+      135.585,
+      137.085
+    ],
+    "text": "",
+    "pinyin": ""
+  },
+  {
+    "id": 50,
+    "abs_timestamp": [
+      138.03,
+      139.53
+    ],
+    "text": "字幕by索兰娅",
+    "pinyin": "zì mù by suǒ lán yà"
+  }
+]

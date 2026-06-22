@@ -1,0 +1,614 @@
+[
+  {
+    "id": 0,
+    "abs_timestamp": [
+      1.275,
+      2.775
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 1,
+    "abs_timestamp": [
+      4.185,
+      5.685
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 2,
+    "abs_timestamp": [
+      6.885,
+      8.385
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 3,
+    "abs_timestamp": [
+      9.45,
+      10.95
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 4,
+    "abs_timestamp": [
+      12.465,
+      13.965
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 5,
+    "abs_timestamp": [
+      15.344999999999999,
+      16.845
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 6,
+    "abs_timestamp": [
+      18.015,
+      19.515
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 7,
+    "abs_timestamp": [
+      20.385,
+      21.885
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 8,
+    "abs_timestamp": [
+      22.845,
+      24.345
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 9,
+    "abs_timestamp": [
+      25.245,
+      26.745
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 10,
+    "abs_timestamp": [
+      31.2,
+      32.7
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 11,
+    "abs_timestamp": [
+      33.585,
+      35.085
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 12,
+    "abs_timestamp": [
+      35.79,
+      37.29
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 13,
+    "abs_timestamp": [
+      38.07,
+      39.57
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 14,
+    "abs_timestamp": [
+      40.425,
+      41.925
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 15,
+    "abs_timestamp": [
+      42.69,
+      44.19
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 16,
+    "abs_timestamp": [
+      45.015,
+      46.515
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 17,
+    "abs_timestamp": [
+      47.385,
+      48.885
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 18,
+    "abs_timestamp": [
+      49.68,
+      51.18
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 19,
+    "abs_timestamp": [
+      51.9,
+      53.4
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 20,
+    "abs_timestamp": [
+      54.225,
+      55.725
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 21,
+    "abs_timestamp": [
+      56.55,
+      58.05
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 22,
+    "abs_timestamp": [
+      58.92,
+      60.42
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 23,
+    "abs_timestamp": [
+      62.97,
+      64.47
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 24,
+    "abs_timestamp": [
+      65.25,
+      66.75
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 25,
+    "abs_timestamp": [
+      67.455,
+      68.955
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 26,
+    "abs_timestamp": [
+      69.855,
+      71.355
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 27,
+    "abs_timestamp": [
+      72.135,
+      73.635
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 28,
+    "abs_timestamp": [
+      74.385,
+      75.885
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 29,
+    "abs_timestamp": [
+      76.53,
+      78.03
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 30,
+    "abs_timestamp": [
+      81.48,
+      82.98
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 31,
+    "abs_timestamp": [
+      83.715,
+      85.215
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 32,
+    "abs_timestamp": [
+      86.175,
+      87.675
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 33,
+    "abs_timestamp": [
+      88.59,
+      90.09
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 34,
+    "abs_timestamp": [
+      90.99,
+      92.49
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 35,
+    "abs_timestamp": [
+      93.42,
+      94.92
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 36,
+    "abs_timestamp": [
+      95.925,
+      97.425
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 37,
+    "abs_timestamp": [
+      98.31,
+      99.81
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 38,
+    "abs_timestamp": [
+      100.77,
+      102.27
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 39,
+    "abs_timestamp": [
+      103.14,
+      104.64
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 40,
+    "abs_timestamp": [
+      105.555,
+      107.055
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 41,
+    "abs_timestamp": [
+      107.82,
+      109.32
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 42,
+    "abs_timestamp": [
+      110.22,
+      111.72
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 43,
+    "abs_timestamp": [
+      112.545,
+      114.045
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 44,
+    "abs_timestamp": [
+      116.235,
+      117.735
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 45,
+    "abs_timestamp": [
+      118.65,
+      120.15
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 46,
+    "abs_timestamp": [
+      121.035,
+      122.535
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 47,
+    "abs_timestamp": [
+      123.285,
+      124.785
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 48,
+    "abs_timestamp": [
+      125.55,
+      127.05
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 49,
+    "abs_timestamp": [
+      127.845,
+      129.345
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 50,
+    "abs_timestamp": [
+      130.17,
+      131.67
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 51,
+    "abs_timestamp": [
+      132.39,
+      133.89
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 52,
+    "abs_timestamp": [
+      134.64,
+      136.14
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 53,
+    "abs_timestamp": [
+      136.995,
+      138.495
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 54,
+    "abs_timestamp": [
+      139.41,
+      140.91
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 55,
+    "abs_timestamp": [
+      141.855,
+      143.355
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 56,
+    "abs_timestamp": [
+      144.21,
+      145.71
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 57,
+    "abs_timestamp": [
+      146.52,
+      148.02
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 58,
+    "abs_timestamp": [
+      148.725,
+      150.225
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 59,
+    "abs_timestamp": [
+      150.945,
+      152.445
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 60,
+    "abs_timestamp": [
+      154.56,
+      156.06
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 61,
+    "abs_timestamp": [
+      156.645,
+      158.145
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 62,
+    "abs_timestamp": [
+      158.88,
+      160.38
+    ],
+    "text": "说小",
+    "pinyin": "shuō xiǎo"
+  },
+  {
+    "id": 63,
+    "abs_timestamp": [
+      161.025,
+      162.525
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 64,
+    "abs_timestamp": [
+      163.17,
+      164.67
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 65,
+    "abs_timestamp": [
+      165.315,
+      166.815
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 66,
+    "abs_timestamp": [
+      167.55,
+      169.05
+    ],
+    "text": "缩小",
+    "pinyin": "suō xiǎo"
+  },
+  {
+    "id": 67,
+    "abs_timestamp": [
+      169.65,
+      171.15
+    ],
+    "text": "縮小",
+    "pinyin": "suō xiǎo"
+  }
+]

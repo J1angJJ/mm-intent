@@ -7,17 +7,58 @@
   - 基于锚点主干与残差辅助的多模态用户交互意图模型代码
   - 将这个脚本拆分成train.py和test.py，将特征提取代码整合进train.py和test.py代码，调试，实现端到端输入输出；重构代码后，运行train.py脚本进行模型训练，运行test.py脚本进行测试。
 - `train.py`
-  - 端到端训练入口封装：先检查五类缓存特征是否齐全，再分发到 baseline 或 improved 训练脚本。
-  - 可通过 `--extract-features` 在特征缺失时依次调用特征提取脚本。
+  - `--input-mode raw` 从 HoloLens 视频、fisheye 视频和 `imu.csv` 开始，运行预处理后训练模型；中间特征只作为可追踪缓存。
+  - `--input-mode features` 保留原有缓存特征训练方式。
   - 可通过 `--missing-modalities` 和 `--noise-modality --noise-level` 启动模态缺失/噪声实验。
 - `test.py`
-  - 测试结果入口封装：读取训练输出目录中的 `metrics.json` 和分类报告，打印关键测试指标。
+  - 独立测试入口：加载 checkpoint、`scalers.pkl` 和 `label_encoder.pkl`，对测试数据执行真实前向推理。
+  - 保存 `independent_test_metrics.json`、逐样本预测和独立分类报告，不再读取旧 `metrics.json` 作为测试结果。
 - `run_missing_experiments.py`
   - 生成或执行单模态缺失、双模态缺失实验命令。
 - `run_noise_experiments.py`
-  - 生成或执行单模态 20%、40%、60% 噪声实验命令。
+  - 默认生成或执行原始模态 20%、40%、60% 噪声实验命令，结果写入 `outputs/raw_noise_experiments/`。
 - `collect_experiment_results.py`
   - 汇总多个实验输出目录中的 `metrics.json`，生成 CSV 指标表。
+
+原始数据端到端训练与独立测试：
+
+```powershell
+.\.venv\Scripts\python.exe code\train.py `
+  --model baseline `
+  --input-mode raw `
+  --epochs 100 `
+  --patience 10 `
+  --output-dir outputs\baseline_raw_end_to_end
+
+.\.venv\Scripts\python.exe code\test.py `
+  --model baseline `
+  --input-mode raw `
+  --raw-cache-dir outputs\raw_feature_cache\clean_seed42 `
+  --output-dir outputs\baseline_raw_end_to_end
+```
+
+原始模态噪声的 15 组实验：
+
+```powershell
+# 先检查命令，不训练
+.\.venv\Scripts\python.exe code\run_noise_experiments.py `
+  --model baseline `
+  --epochs 100 `
+  --patience 10
+
+# 正式执行
+.\.venv\Scripts\python.exe code\run_noise_experiments.py `
+  --model baseline `
+  --epochs 100 `
+  --patience 10 `
+  --execute
+```
+
+原始噪声定义固定记录在每个缓存的 `raw_preprocessing_manifest.json`：Audio 在 MFCC 前对波形加噪；Gesture/Scene 在视觉编码前对像素加噪；IMU 在派生运动学量前对原始通道加噪；Text 在语义编码前按比例删除转写字符。未受扰动的模态复用 `data_full` 中由原始数据确定性生成的缓存，目标模态必须重新提取。
+
+Hand Geometry 使用 `--gesture-representation hand_geometry`。Gesture 噪声会在 MediaPipe landmark 检测前加入原始像素噪声，输出缓存与 CLIP Gesture 缓存分离。
+
+为减少重复视频解码，`precompute_gesture_noise_levels.py` 在同一次原始帧读取中生成 20%/40%/60% 三档 Gesture 噪声，并按视频跳过已完成缓存。`clone_hand_geometry_noise_caches.py` 让 Hand Geometry 与其他模型共享同一份非 Gesture 原始扰动，只替换手势表示。`run_noise_experiments.py --skip-existing` 可跳过已有 `metrics.json`，因此中断后无需从头训练。
 
 模型训练完成会保存成以下文件：
 - `*.pt`：训练完成后的模型权重文件
