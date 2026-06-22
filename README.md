@@ -278,6 +278,24 @@ python code/batch_end_to_end.py \
   --output-dir outputs/batch_e2e_hand_geometry_raw
 ```
 
+### 端到端计时结果
+
+服务器环境为 NVIDIA RTX 5880 Ada，batch size 为 64。正式工作流级端到端使用已缓存的 Hand Geometry 特征，主要统计模型训练与测试阶段耗时；batch 级 raw 结果额外统计当前 batch 从 fisheye 原视频现算 MediaPipe hand geometry 的耗时。
+
+| 设置 | 样本数 | 平均样本训练时间 | 平均样本测试时间 | 特征相关耗时 |
+|---|---:|---:|---:|---:|
+| workflow cached Hand Geometry | train seen 16949 / test 744 | 0.000434 s | 0.000127 s | 使用缓存特征 |
+| batch cached Hand Geometry | 32 | 0.015178 s | 0.000806 s | cache load 0.000480 s/sample |
+| batch raw Hand Geometry | 32 | 0.013226 s | 0.000729 s | raw geometry 1.758790 s/sample |
+
+对应完整模态测试结果：
+
+| 模型 | joint_acc | intent_acc | scene_acc | best_epoch |
+|---|---:|---:|---:|---:|
+| Ours: Hand Geometry workflow E2E | 0.9946 | 0.9946 | 1.0000 | 13 |
+
+需要注意：workflow 计时反映“缓存特征后的训练/测试吞吐”；raw batch 计时反映 MediaPipe hand geometry 从视频现算的代价。二者协议不同，应分别汇报。
+
 ### Hand Geometry 鲁棒性实验
 
 ```bash
