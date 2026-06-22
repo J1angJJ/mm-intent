@@ -300,6 +300,13 @@ python code/batch_end_to_end.py \
 
 Full raw workflow 从原始数据重新执行 timestamp、MediaPipe-cropped CLIP gesture、MFCC、ASR、IMU、Hand Geometry 与训练测试。总墙钟时间为 2:01:30，其中主要耗时来自 `strong_gesture2.0.py` 约 60 分钟和 `extract_hand_geometry_features.py` 约 55 分钟。
 
+公平比较需要区分固定缓存特征协议和重新提取原始特征协议：
+
+| 协议 | Given Improved Baseline | Ours: Hand Geometry | 提升 |
+|---|---:|---:|---:|
+| cached features | 0.9839 | 0.9946 | +0.0107 |
+| full raw E2E | 0.9530 | 0.9855 mean / 0.9879 best | +0.0325 / +0.0349 |
+
 ### Hand Geometry 鲁棒性实验
 
 ```bash
