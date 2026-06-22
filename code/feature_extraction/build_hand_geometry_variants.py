@@ -124,7 +124,19 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Build paper ablation variants from cached hand-geometry features.")
     parser.add_argument("--input-dir", default=str(PROCESSED_DATA_DIR / "hand_geometry_features"))
     parser.add_argument("--output-root", default=str(PROCESSED_DATA_DIR / "hand_geometry_variants"))
-    parser.add_argument("--variants", nargs="*", default=["landmark_only", "no_meta", "no_fingertip", "no_pinch", "no_distances", "delta"])
+    parser.add_argument(
+        "--variants",
+        nargs="*",
+        default=[
+            "landmark_only",
+            "no_meta",
+            "no_fingertip",
+            "no_pinch",
+            "no_distances",
+            "delta",
+            "delta_accel",
+        ],
+    )
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 

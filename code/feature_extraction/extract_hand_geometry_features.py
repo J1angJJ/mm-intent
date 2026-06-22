@@ -8,8 +8,6 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import cv2
-import mediapipe as mp
 import numpy as np
 from tqdm import tqdm
 
@@ -38,6 +36,8 @@ def load_avi_to_mp4_map() -> dict[str, str]:
 
 
 def create_landmark_detector(task_path: Path):
+    import mediapipe as mp
+
     if task_path.exists():
         try:
             options = mp.tasks.vision.HandLandmarkerOptions(
@@ -59,6 +59,9 @@ def create_landmark_detector(task_path: Path):
 
 
 def detect_landmarks(detector_kind: str, detector, frame_bgr: np.ndarray):
+    import cv2
+    import mediapipe as mp
+
     frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
     if detector_kind == "tasks":
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
@@ -68,6 +71,15 @@ def detect_landmarks(detector_kind: str, detector, frame_bgr: np.ndarray):
     if not result.multi_hand_landmarks:
         return []
     return [hand.landmark for hand in result.multi_hand_landmarks]
+
+
+def close_landmark_detector(detector) -> None:
+    close = getattr(detector, "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception as exc:
+            print(f"[warn] MediaPipe detector close failed: {exc}")
 
 
 def hand_feature_from_landmarks(hand_landmarks) -> np.ndarray:
@@ -128,6 +140,8 @@ def hand_feature_from_landmarks(hand_landmarks) -> np.ndarray:
 
 
 def get_avi_sync_ms(avi_path: Path, utc_target: datetime) -> float | None:
+    import cv2
+
     avi_fn = avi_path.name
     time_part = avi_fn.split("_")[1] + "_" + avi_fn.split("_")[2].split(".")[0]
     avi_utc_start = datetime.strptime(time_part, "%Y%m%d_%H%M%S%f") - timedelta(hours=8)
@@ -145,6 +159,8 @@ def get_avi_sync_ms(avi_path: Path, utc_target: datetime) -> float | None:
 
 
 def extract_sequence(video_path: Path, center_ms: float, detector_kind: str, detector) -> np.ndarray | None:
+    import cv2
+
     cap = cv2.VideoCapture(str(video_path))
     fps = cap.get(cv2.CAP_PROP_FPS)
     frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -191,47 +207,50 @@ def main() -> None:
         items = items[: args.limit]
 
     print(f"[hand-geometry] videos={len(items)} output={output_dir} dim={FEATURE_DIM}")
-    for avi_name, mp4_name in items:
-        mp4_base = Path(mp4_name).stem
-        metadata_path = PROCESSED_DATA_DIR / f"metadata_strong_gesture_{mp4_base}.npy"
-        video_path = FISHEYE_DIR / avi_name
-        if not metadata_path.exists() or not video_path.exists():
-            print(f"[skip] missing metadata/video: {mp4_name}")
-            continue
-        metadata = np.load(metadata_path, allow_pickle=True).item()
-        timestamps = metadata["approx_timestamps"]
-        labels = metadata["labels"]
-        valid_feats, valid_labels, valid_tss = [], [], []
-        debug: dict[str, object] = {}
-        print(f"\n>>> {avi_name} -> {mp4_name}")
-        for index, ts_str in tqdm(list(enumerate(timestamps)), total=len(timestamps)):
-            try:
-                utc_dt = datetime.fromisoformat(str(ts_str).replace("Z", "+00:00")).replace(tzinfo=None)
-                center_ms = get_avi_sync_ms(video_path, utc_dt)
-                if center_ms is None:
-                    continue
-                sequence = extract_sequence(video_path, center_ms, detector_kind, detector)
-                if sequence is None:
-                    continue
-                valid_feats.append(sequence)
-                valid_labels.append(labels[index])
-                valid_tss.append(ts_str)
-                debug[str(len(valid_feats) - 1)] = {"source_index": index, "timestamp": str(ts_str), "center_ms": center_ms}
-            except Exception as exc:
-                print(f"[warn] segment {index}: {exc}")
-        if not valid_feats:
-            print("[warn] no valid hand geometry sequences")
-            continue
-        payload = {
-            "features": np.stack(valid_feats, axis=0).astype(np.float32),
-            "labels": np.asarray(valid_labels),
-            "video_names": np.asarray([mp4_name] * len(valid_labels)),
-            "approx_timestamps": valid_tss,
-        }
-        np.save(output_dir / f"strong_gesture_features_{mp4_base}.npy", payload)
-        with (output_dir / f"hand_geometry_debug_{mp4_base}.json").open("w", encoding="utf-8") as file:
-            json.dump(debug, file, indent=2, ensure_ascii=False)
-        print(f"[saved] {mp4_name} {payload['features'].shape}")
+    try:
+        for avi_name, mp4_name in items:
+            mp4_base = Path(mp4_name).stem
+            metadata_path = PROCESSED_DATA_DIR / f"metadata_strong_gesture_{mp4_base}.npy"
+            video_path = FISHEYE_DIR / avi_name
+            if not metadata_path.exists() or not video_path.exists():
+                print(f"[skip] missing metadata/video: {mp4_name}")
+                continue
+            metadata = np.load(metadata_path, allow_pickle=True).item()
+            timestamps = metadata["approx_timestamps"]
+            labels = metadata["labels"]
+            valid_feats, valid_labels, valid_tss = [], [], []
+            debug: dict[str, object] = {}
+            print(f"\n>>> {avi_name} -> {mp4_name}")
+            for index, ts_str in tqdm(list(enumerate(timestamps)), total=len(timestamps)):
+                try:
+                    utc_dt = datetime.fromisoformat(str(ts_str).replace("Z", "+00:00")).replace(tzinfo=None)
+                    center_ms = get_avi_sync_ms(video_path, utc_dt)
+                    if center_ms is None:
+                        continue
+                    sequence = extract_sequence(video_path, center_ms, detector_kind, detector)
+                    if sequence is None:
+                        continue
+                    valid_feats.append(sequence)
+                    valid_labels.append(labels[index])
+                    valid_tss.append(ts_str)
+                    debug[str(len(valid_feats) - 1)] = {"source_index": index, "timestamp": str(ts_str), "center_ms": center_ms}
+                except Exception as exc:
+                    print(f"[warn] segment {index}: {exc}")
+            if not valid_feats:
+                print("[warn] no valid hand geometry sequences")
+                continue
+            payload = {
+                "features": np.stack(valid_feats, axis=0).astype(np.float32),
+                "labels": np.asarray(valid_labels),
+                "video_names": np.asarray([mp4_name] * len(valid_labels)),
+                "approx_timestamps": valid_tss,
+            }
+            np.save(output_dir / f"strong_gesture_features_{mp4_base}.npy", payload)
+            with (output_dir / f"hand_geometry_debug_{mp4_base}.json").open("w", encoding="utf-8") as file:
+                json.dump(debug, file, indent=2, ensure_ascii=False)
+            print(f"[saved] {mp4_name} {payload['features'].shape}")
+    finally:
+        close_landmark_detector(detector)
 
 
 if __name__ == "__main__":

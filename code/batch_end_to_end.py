@@ -91,16 +91,16 @@ def extract_raw_hand_geometry_batch(
     )
     detector_kind, detector = geometry.create_landmark_detector(task_path)
     cap = cv2.VideoCapture(str(video_path))
-    if not cap.isOpened():
-        raise RuntimeError(f"Cannot open video: {video_path}")
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    total_ms = frames / fps * 1000 if fps > 0 else 0.0
-
-    output = np.asarray(cached_gesture, dtype=np.float32).copy()
-    extracted = 0
-    failed: list[int] = []
     try:
+        if not cap.isOpened():
+            raise RuntimeError(f"Cannot open video: {video_path}")
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        total_ms = frames / fps * 1000 if fps > 0 else 0.0
+
+        output = np.asarray(cached_gesture, dtype=np.float32).copy()
+        extracted = 0
+        failed: list[int] = []
         for row, ts_value in enumerate(timestamps):
             utc_dt = datetime.fromisoformat(str(ts_value).replace("Z", "+00:00")).replace(tzinfo=None)
             center_ms = geometry.get_avi_sync_ms(video_path, utc_dt)
@@ -125,18 +125,19 @@ def extract_raw_hand_geometry_batch(
                 continue
             output[row] = np.stack(sequence, axis=0).astype(np.float32)
             extracted += 1
+
+        if failed and not allow_fallback:
+            raise RuntimeError(f"Raw hand geometry failed for rows: {failed}")
+        return output, {
+            "video_path": str(video_path),
+            "detector": detector_kind,
+            "requested": int(len(timestamps)),
+            "extracted": int(extracted),
+            "fallback_rows": failed,
+        }
     finally:
         cap.release()
-
-    if failed and not allow_fallback:
-        raise RuntimeError(f"Raw hand geometry failed for rows: {failed}")
-    return output, {
-        "video_path": str(video_path),
-        "detector": detector_kind,
-        "requested": int(len(timestamps)),
-        "extracted": int(extracted),
-        "fallback_rows": failed,
-    }
+        geometry.close_landmark_detector(detector)
 
 
 def main() -> None:
