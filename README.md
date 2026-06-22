@@ -205,6 +205,7 @@ docs/figures/
   main_results_methods.png
   method_positioning.png
   factorized_generalization.png
+  hand_geometry_ablation.png
 ```
 
 ## 复现实验
@@ -306,6 +307,25 @@ Full raw workflow 从原始数据重新执行 timestamp、MediaPipe-cropped CLIP
 |---|---:|---:|---:|
 | cached features | 0.9839 | 0.9946 | +0.0107 |
 | full raw E2E | 0.9530 | 0.9855 mean / 0.9879 best | +0.0325 / +0.0349 |
+
+### Hand Geometry 消融
+
+![Hand Geometry 消融](docs/figures/hand_geometry_ablation.png)
+
+为分析 Hand Geometry 改进模块内部各特征组的贡献，基于同一批 full raw 重新提取后的手部几何缓存派生特征变体，并保持训练协议一致。
+
+| 变体 | 说明 | joint_acc | intent_acc | scene_acc |
+|---|---|---:|---:|---:|
+| original | 原始 96 维 Hand Geometry | 0.9852 | 0.9866 | 0.9987 |
+| landmark_only | 仅保留 wrist-relative landmarks | 0.9879 | 0.9879 | 1.0000 |
+| no_meta | 去掉检测框/中心/尺度等 meta | **0.9892** | **0.9892** | 1.0000 |
+| no_fingertip | 去掉 fingertip-to-wrist 距离 | 0.9852 | 0.9852 | 1.0000 |
+| no_pinch | 去掉 pinch 距离 | 0.9852 | 0.9852 | 1.0000 |
+| no_distances | 去掉 fingertip 与 pinch 距离 | 0.9879 | 0.9879 | 1.0000 |
+| delta | 拼接一阶时序差分 | 0.9704 | 0.9704 | 1.0000 |
+| delta_accel | 拼接一阶与二阶差分 | 0.9825 | 0.9839 | 0.9987 |
+
+结果显示，当前数据集上 wrist-relative landmarks 已经包含主要动作判别信息；meta 和显式距离组并非不可或缺，去掉 meta 反而略有提升。直接拼接时序差分会明显降低准确率，说明在小样本且文本锚点较强的设置下，高维差分特征可能引入噪声，简单速度扩展不如稳定的归一化关键点几何。
 
 ### Hand Geometry 鲁棒性实验
 
