@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import pickle
+import time
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
@@ -17,6 +18,16 @@ from torch.utils.data import DataLoader, Dataset
 
 import baseline_real_scene as base
 from project_paths import MODEL_OUTPUT_ROOT
+
+
+def synchronize_device() -> None:
+    """Synchronize CUDA so wall-clock measurements include queued GPU work."""
+    if DEVICE.type == "cuda":
+        torch.cuda.synchronize(DEVICE)
+
+
+def safe_divide(numerator: float, denominator: int) -> float:
+    return float(numerator / denominator) if denominator > 0 else 0.0
 
 
 # ============================================================
@@ -1225,7 +1236,15 @@ def main() -> None:
     train_supcon_losses: List[float] = []
 
     print("[step] start training")
+    optimizer_training_seconds = 0.0
+    validation_seconds = 0.0
+    epochs_completed = 0
+    synchronize_device()
+    training_loop_start = time.perf_counter()
+
     for epoch in range(1, EPOCHS + 1):
+        synchronize_device()
+        train_epoch_start = time.perf_counter()
         train_loss, train_acc, train_parts = train_one_epoch(
             model,
             train_loader,
@@ -1234,6 +1253,11 @@ def main() -> None:
             scene_criterion,
             optimizer,
         )
+        synchronize_device()
+        optimizer_training_seconds += time.perf_counter() - train_epoch_start
+
+        synchronize_device()
+        validation_start = time.perf_counter()
         val_metrics = evaluate(
             model,
             val_loader,
@@ -1241,6 +1265,9 @@ def main() -> None:
             intent_criterion,
             scene_criterion,
         )
+        synchronize_device()
+        validation_seconds += time.perf_counter() - validation_start
+        epochs_completed = epoch
 
         train_losses.append(float(train_loss))
         val_losses.append(float(val_metrics["loss"]))
@@ -1313,6 +1340,39 @@ def main() -> None:
                 print(f"[early_stop] no validation improvement for {PATIENCE} epochs")
                 break
 
+    synchronize_device()
+    training_loop_seconds = time.perf_counter() - training_loop_start
+    train_sample_count = int(len(y_train_joint))
+    sample_exposures = int(train_sample_count * epochs_completed)
+    avg_training_seconds_per_sample = safe_divide(
+        optimizer_training_seconds,
+        sample_exposures,
+    )
+    training_timing = {
+        "optimizer_training_seconds": float(optimizer_training_seconds),
+        "validation_seconds": float(validation_seconds),
+        "training_loop_seconds": float(training_loop_seconds),
+        "epochs_completed": int(epochs_completed),
+        "train_sample_count": train_sample_count,
+        "sample_exposures": sample_exposures,
+        "avg_training_seconds_per_sample": avg_training_seconds_per_sample,
+        "avg_training_seconds_per_sample_exposure": avg_training_seconds_per_sample,
+        "cumulative_training_seconds_per_unique_sample": safe_divide(
+            optimizer_training_seconds,
+            train_sample_count,
+        ),
+        "avg_training_seconds_per_sample_definition": (
+            "optimizer_training_seconds / (train_sample_count * epochs_completed)"
+        ),
+    }
+    print(
+        "[timing] "
+        f"optimizer_train={optimizer_training_seconds:.3f}s "
+        f"validation={validation_seconds:.3f}s "
+        f"loop={training_loop_seconds:.3f}s "
+        f"avg_train_per_sample={avg_training_seconds_per_sample:.8f}s"
+    )
+
     if not checkpoint_path.exists():
         raise RuntimeError("Training finished without saving a checkpoint.")
 
@@ -1374,9 +1434,9 @@ def main() -> None:
             json.dump(gate_summary, file, indent=2, ensure_ascii=False)
 
         metrics = {
+            "timing": training_timing,
             "config": {
                 "random_seed": base.RANDOM_SEED,
-                "missing_modalities": list(base.MISSING_MODALITIES),
                 "batch_size": BATCH_SIZE,
                 "epochs": EPOCHS,
                 "patience": PATIENCE,
@@ -1662,9 +1722,9 @@ def main() -> None:
         json.dump(modality_contribution, file, indent=2, ensure_ascii=False)
 
     metrics = {
+        "timing": training_timing,
         "config": {
             "random_seed": base.RANDOM_SEED,
-            "missing_modalities": list(base.MISSING_MODALITIES),
             "batch_size": BATCH_SIZE,
             "epochs": EPOCHS,
             "patience": PATIENCE,

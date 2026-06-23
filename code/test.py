@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import pickle
+import time
 from pathlib import Path
 from typing import Any
 
@@ -129,6 +130,16 @@ def build_model(
     return model
 
 
+def synchronize_device(device: torch.device) -> None:
+    """Synchronize CUDA so wall-clock measurements include queued GPU work."""
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+
+
+def safe_divide(numerator: float, denominator: int) -> float:
+    return float(numerator / denominator) if denominator > 0 else 0.0
+
+
 @torch.no_grad()
 def predict(model_name: str, model, loader, device: torch.device) -> tuple[np.ndarray, np.ndarray]:
     true_values: list[np.ndarray] = []
@@ -157,6 +168,7 @@ def split_joint_names(names: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 def main() -> None:
+    test_wall_start = time.perf_counter()
     parser = argparse.ArgumentParser(
         description="Independent MM-Intent inference: raw/test data -> checkpoint -> intent predictions."
     )
@@ -183,7 +195,16 @@ def main() -> None:
     parser.add_argument("--noise-level", type=float, default=0.0)
     parser.add_argument("--noise-space", choices=("feature", "raw"))
     parser.add_argument("--noise-seed", type=int, default=42)
-    parser.add_argument("--missing-modalities", nargs="*", default=[])
+    parser.add_argument(
+        "--missing-modalities",
+        nargs="*",
+        choices=("imu", "gesture", "audio", "text", "scene"),
+        default=[],
+        help=(
+            "Modalities removed for the independent missing-modality test. "
+            "Use the same set that was used to train the checkpoint."
+        ),
+    )
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--gesture-feature-dir")
     parser.add_argument("--audio-feature-dir")
@@ -195,6 +216,7 @@ def main() -> None:
     parser.add_argument("--imu-feature-dim", type=int)
     parser.add_argument("--show-report", action="store_true")
     args = parser.parse_args()
+    preprocessing_seconds = 0.0
 
     if not args.video_names:
         parser.error("--video-names must contain at least one video")
@@ -217,7 +239,11 @@ def main() -> None:
             args.gesture_representation,
         )
         if args.missing_modalities
-        else default_raw_cache_dir(args.noise_modality or "", args.noise_level, args.noise_seed)
+        else default_raw_cache_dir(
+            args.noise_modality or "",
+            args.noise_level,
+            args.noise_seed,
+        )
     )
     processed_data_dir = (
         raw_cache_dir
@@ -232,25 +258,38 @@ def main() -> None:
     configure_environment(args, processed_data_dir)
 
     if args.input_mode == "raw":
+        preprocessing_start = time.perf_counter()
         base_feature_dir = (
             Path(args.base_feature_dir).resolve()
             if args.base_feature_dir
             else (
-                (Path(args.dataset_dir).resolve() if args.dataset_dir else PROJECT_ROOT / "dataset")
+                PROJECT_ROOT
+                / "outputs"
+                / "raw_feature_cache"
+                / (
+                    f"clean_seed{args.noise_seed}_hand_geometry"
+                    if args.gesture_representation == "hand_geometry"
+                    else f"clean_seed{args.noise_seed}"
+                )
+            ).resolve()
+            if args.missing_modalities
+            else (
+                (
+                    Path(args.dataset_dir).resolve()
+                    if args.dataset_dir
+                    else PROJECT_ROOT / "dataset"
+                )
                 / "AR_Data_Process3.0"
                 / "data_full"
             ).resolve()
             if args.noise_modality and args.noise_level > 0.0
             else None
         )
-        if args.missing_modalities and base_feature_dir is None:
-            suffix = "_hand_geometry" if args.gesture_representation == "hand_geometry" else ""
-            base_feature_dir = (
-                PROJECT_ROOT
-                / "outputs"
-                / "raw_feature_cache"
-                / f"clean_seed{args.noise_seed}{suffix}"
-            ).resolve()
+        if base_feature_dir is not None:
+            os.environ["MM_INTENT_BASE_FEATURE_DIR"] = str(
+                base_feature_dir.resolve()
+            )
+
         raw_manifest = prepare_raw_features(
             output_dir=raw_cache_dir,
             video_names=args.video_names,
@@ -266,7 +305,10 @@ def main() -> None:
         )
         scene_cache_dir = raw_manifest.get("scene_cache_dir")
         if scene_cache_dir:
-            os.environ["MM_INTENT_SCENE_CACHE_DIR"] = str(Path(str(scene_cache_dir)).resolve())
+            os.environ["MM_INTENT_SCENE_CACHE_DIR"] = str(
+                Path(str(scene_cache_dir)).resolve()
+            )
+        preprocessing_seconds = time.perf_counter() - preprocessing_start
         if args.preprocess_dry_run:
             print("[test] preprocessing dry-run complete; checkpoint inference was not started.")
             return
@@ -280,6 +322,7 @@ def main() -> None:
         if not required_path.exists():
             raise SystemExit(f"Missing independent-test artifact: {required_path}")
 
+    artifact_loading_start = time.perf_counter()
     import baseline_real_scene as base
     from real_scene_utils import RealSceneFeatureCache
 
@@ -289,10 +332,13 @@ def main() -> None:
     with label_encoder_path.open("rb") as file:
         label_encoder = pickle.load(file)
     checkpoint = load_checkpoint(checkpoint_path, device)
+    artifact_loading_seconds = time.perf_counter() - artifact_loading_start
 
     print(f"[test] model={args.model} input_mode={args.input_mode} device={device}")
     print(f"[test] checkpoint={checkpoint_path}")
     print(f"[test] videos={len(args.video_names)} processed_data={processed_data_dir}")
+
+    data_preparation_start = time.perf_counter()
     scene_cache = RealSceneFeatureCache(base.SCENE_CACHE_DIR)
     raw_features, intent_targets, scene_targets, _scene_selection = base.load_multimodal_data(
         args.video_names,
@@ -308,10 +354,21 @@ def main() -> None:
         args.batch_size,
         shuffle=False,
     )
+    data_preparation_seconds = time.perf_counter() - data_preparation_start
 
     joint_class_names = label_encoder.classes_.tolist()
+    model_loading_start = time.perf_counter()
     model = build_model(args.model, checkpoint, joint_class_names, device)
+    synchronize_device(device)
+    model_loading_seconds = time.perf_counter() - model_loading_start
+
+    synchronize_device(device)
+    inference_start = time.perf_counter()
     joint_true, joint_pred = predict(args.model, model, loader, device)
+    synchronize_device(device)
+    model_inference_seconds = time.perf_counter() - inference_start
+
+    postprocessing_start = time.perf_counter()
     true_names = label_encoder.inverse_transform(joint_true)
     pred_names = label_encoder.inverse_transform(joint_pred)
     true_scenes, true_intents = split_joint_names(true_names)
@@ -332,8 +389,14 @@ def main() -> None:
         "video_names": args.video_names,
         "missing_modalities": args.missing_modalities,
         "raw_missing": {
-            "modalities": args.missing_modalities if args.input_mode == "raw" else [],
-            "condition_cache_enforced": bool(args.input_mode == "raw" and args.missing_modalities),
+            "modalities": (
+                args.missing_modalities
+                if args.input_mode == "raw"
+                else []
+            ),
+            "condition_cache_enforced": bool(
+                args.input_mode == "raw" and args.missing_modalities
+            ),
         },
         "raw_noise": {
             "modality": args.noise_modality if args.noise_space == "raw" else "",
@@ -365,6 +428,30 @@ def main() -> None:
         )
     ]
 
+    postprocessing_seconds = time.perf_counter() - postprocessing_start
+    end_to_end_test_seconds = time.perf_counter() - test_wall_start
+    sample_count = int(len(joint_true))
+    avg_test_seconds_per_sample = safe_divide(model_inference_seconds, sample_count)
+    result["timing"] = {
+        "preprocessing_seconds": float(preprocessing_seconds),
+        "artifact_loading_seconds": float(artifact_loading_seconds),
+        "data_preparation_seconds": float(data_preparation_seconds),
+        "model_loading_seconds": float(model_loading_seconds),
+        "model_inference_seconds": float(model_inference_seconds),
+        "postprocessing_seconds": float(postprocessing_seconds),
+        "end_to_end_test_seconds": float(end_to_end_test_seconds),
+        "test_sample_count": sample_count,
+        "avg_test_seconds_per_sample": avg_test_seconds_per_sample,
+        "avg_inference_seconds_per_sample": avg_test_seconds_per_sample,
+        "avg_end_to_end_test_seconds_per_sample": safe_divide(
+            end_to_end_test_seconds,
+            sample_count,
+        ),
+        "avg_test_seconds_per_sample_definition": (
+            "model_inference_seconds / test_sample_count"
+        ),
+    }
+
     output_dir.mkdir(parents=True, exist_ok=True)
     metrics_path = output_dir / "independent_test_metrics.json"
     predictions_path = output_dir / "independent_test_predictions.json"
@@ -376,6 +463,12 @@ def main() -> None:
     print(
         f"[test-result] n={result['sample_count']} joint={result['joint_accuracy']:.4f} "
         f"intent={result['intent_accuracy']:.4f} scene={result['scene_accuracy']:.4f}"
+    )
+    print(
+        "[test-timing] "
+        f"inference={model_inference_seconds:.6f}s "
+        f"avg_per_sample={avg_test_seconds_per_sample:.8f}s "
+        f"end_to_end={end_to_end_test_seconds:.3f}s"
     )
     print(f"[test-output] metrics={metrics_path}")
     print(f"[test-output] predictions={predictions_path}")

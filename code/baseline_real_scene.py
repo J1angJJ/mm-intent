@@ -10,6 +10,7 @@ import math
 import os
 import pickle
 import random
+import time
 from collections import Counter
 from glob import glob
 from itertools import combinations
@@ -266,6 +267,16 @@ def set_seed(seed: int) -> None:
         torch.cuda.manual_seed_all(seed)
 
 
+def synchronize_device() -> None:
+    """Synchronize CUDA so wall-clock measurements include queued GPU work."""
+    if DEVICE.type == "cuda":
+        torch.cuda.synchronize(DEVICE)
+
+
+def safe_divide(numerator: float, denominator: int) -> float:
+    return float(numerator / denominator) if denominator > 0 else 0.0
+
+
 def format_label_name(label_value: int) -> str:
     return INTENT_NAMES.get(int(label_value), str(label_value))
 
@@ -483,7 +494,6 @@ def apply_modality_perturbations(
 def get_feature_paths(video_name: str) -> Dict[str, Path]:
     name_no_ext = Path(video_name).stem
     return {
-        "timestamp": PROCESSED_DATA_DIR / f"features_timestamp_{name_no_ext}.npy",
         "gesture": STRONG_GESTURE_DIR / f"strong_gesture_features_{name_no_ext}.npy",
         "imu": IMU_FEAT_DIR / f"imu_features_{name_no_ext}.npy",
         "audio": AUDIO_FEAT_DIR / f"audio_features_{name_no_ext}.npy",
@@ -491,86 +501,163 @@ def get_feature_paths(video_name: str) -> Dict[str, Path]:
     }
 
 
+def _manifest_base_feature_dir() -> Optional[Path]:
+    """Resolve the clean cache used as metadata/alignment fallback.
+
+    Raw-missing caches intentionally omit one or two modality files.  The
+    model still needs the clean file only to recover sample count, labels and
+    timestamps before the declared modality is replaced with zeros.
+    """
+    env_value = os.getenv("MM_INTENT_BASE_FEATURE_DIR", "").strip()
+    if env_value:
+        candidate = Path(env_value).resolve()
+        if candidate.exists():
+            return candidate
+
+    manifest_path = PROCESSED_DATA_DIR / "raw_preprocessing_manifest.json"
+    if not manifest_path.exists():
+        return None
+
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+    candidates: List[object] = [
+        payload.get("unchanged_feature_cache"),
+        payload.get("base_feature_dir"),
+        payload.get("source_cache_dir"),
+    ]
+
+    raw_missing = payload.get("raw_missing")
+    if isinstance(raw_missing, dict):
+        candidates.extend(
+            [
+                raw_missing.get("base_feature_dir"),
+                raw_missing.get("source_cache_dir"),
+                raw_missing.get("clean_cache_dir"),
+            ]
+        )
+
+    for value in candidates:
+        if isinstance(value, str) and value.strip():
+            candidate = Path(value).resolve()
+            if candidate.exists():
+                return candidate
+
+    return None
+
+
+def _fallback_feature_paths(video_name: str) -> Dict[str, Path]:
+    base_dir = _manifest_base_feature_dir()
+    if base_dir is None:
+        return {}
+
+    name_no_ext = Path(video_name).stem
+    return {
+        "gesture": (
+            base_dir
+            / STRONG_GESTURE_DIR.name
+            / f"strong_gesture_features_{name_no_ext}.npy"
+        ),
+        "imu": (
+            base_dir
+            / IMU_FEAT_DIR.name
+            / f"imu_features_{name_no_ext}.npy"
+        ),
+        "audio": (
+            base_dir
+            / AUDIO_FEAT_DIR.name
+            / f"audio_features_{name_no_ext}.npy"
+        ),
+        "text": (
+            base_dir
+            / TEXT_FEAT_DIR.name
+            / f"text_features_{name_no_ext}.npy"
+        ),
+    }
+
+
+def _resolve_feature_paths(video_name: str) -> Optional[Dict[str, Path]]:
+    paths = get_feature_paths(video_name)
+    fallback_paths = _fallback_feature_paths(video_name)
+    declared_missing = {str(item).strip().lower() for item in MISSING_MODALITIES}
+
+    unresolved: List[str] = []
+    resolved: Dict[str, Path] = {}
+
+    for modality, path in paths.items():
+        if path.exists():
+            resolved[modality] = path
+            continue
+
+        if modality in declared_missing:
+            fallback = fallback_paths.get(modality)
+            if fallback is not None and fallback.exists():
+                resolved[modality] = fallback
+                print(
+                    f"[raw-missing] {video_name}: use clean {modality} file "
+                    "for alignment only; values will be zeroed"
+                )
+                continue
+
+        unresolved.append(str(path))
+
+    if unresolved:
+        print(f"[skip] missing feature files for {video_name}: {unresolved}")
+        return None
+
+    return resolved
+
+
 def load_aligned_video(
     video_name: str,
     scene_cache: RealSceneFeatureCache,
 ) -> Optional[Dict[str, object]]:
-    paths = get_feature_paths(video_name)
-    raw_missing = set(MISSING_MODALITIES)
-    required_paths = {"timestamp": paths["timestamp"]}
-    required_paths.update(
-        (modality, paths[modality])
-        for modality in ("gesture", "imu", "audio", "text")
-        if modality not in raw_missing
-    )
-    missing_paths = [str(path) for path in required_paths.values() if not path.exists()]
-    if missing_paths:
-        print(f"[skip] missing required feature files for {video_name}: {missing_paths}")
+    paths = _resolve_feature_paths(video_name)
+    if paths is None:
         return None
 
-    timestamp_data = np.load(paths["timestamp"], allow_pickle=True).item()
-    gesture_data = (
-        None
-        if "gesture" in raw_missing
-        else np.load(paths["gesture"], allow_pickle=True).item()
-    )
-    imu_data = None if "imu" in raw_missing else np.load(paths["imu"], allow_pickle=True).item()
-    audio_data = None if "audio" in raw_missing else np.load(paths["audio"], allow_pickle=True)
-    text_data = None if "text" in raw_missing else np.load(paths["text"], allow_pickle=True).item()
-
-    alignment_data = gesture_data if gesture_data is not None else timestamp_data
-    labels_source = alignment_data["labels"]
-    timestamps_source = alignment_data["approx_timestamps"]
+    gesture_data = np.load(paths["gesture"], allow_pickle=True).item()
+    imu_data = np.load(paths["imu"], allow_pickle=True).item()
+    audio_data = np.load(paths["audio"], allow_pickle=True)
+    text_data = np.load(paths["text"], allow_pickle=True).item()
 
     lengths = [
-        len(labels_source),
-        len(timestamps_source),
+        len(gesture_data["labels"]),
+        len(gesture_data["features"]),
+        len(gesture_data["approx_timestamps"]),
+        len(imu_data["features"]),
+        len(audio_data),
+        len(text_data["features"]),
     ]
-    if gesture_data is not None:
-        lengths.append(len(gesture_data["features"]))
-    if imu_data is not None:
-        lengths.append(len(imu_data["features"]))
-    if audio_data is not None:
-        lengths.append(len(audio_data))
-    if text_data is not None:
-        lengths.append(len(text_data["features"]))
     min_len = min(lengths)
     if min_len <= 0:
         print(f"[skip] no valid aligned samples for {video_name}")
         return None
 
-    labels = np.asarray(labels_source[:min_len], dtype=object)
-    approx_timestamps = np.asarray(timestamps_source[:min_len], dtype=object)
+    labels = np.asarray(gesture_data["labels"][:min_len], dtype=object)
+    approx_timestamps = np.asarray(gesture_data["approx_timestamps"][:min_len], dtype=object)
     valid_mask = np.array([str(label) not in UNKNOWN_LABELS for label in labels], dtype=bool)
     if not valid_mask.any():
         print(f"[skip] all labels are filtered as unknown for {video_name}")
         return None
 
-    imu_feat = (
-        np.zeros((min_len, TARGET_TIMESTEPS, IMU_FEAT_DIM), dtype=np.float32)
-        if imu_data is None
-        else normalize_dense_modality(
-            np.asarray(imu_data["features"][:min_len]), TARGET_TIMESTEPS, IMU_FEAT_DIM
-        )
+    imu_feat = normalize_dense_modality(
+        np.asarray(imu_data["features"][:min_len]),
+        TARGET_TIMESTEPS,
+        IMU_FEAT_DIM,
     )
-    gesture_feat = (
-        np.zeros((min_len, TARGET_TIMESTEPS, GESTURE_FEAT_DIM), dtype=np.float32)
-        if gesture_data is None
-        else normalize_dense_modality(
-            np.asarray(gesture_data["features"][:min_len]), TARGET_TIMESTEPS, GESTURE_FEAT_DIM
-        )
+    gesture_feat = normalize_dense_modality(
+        np.asarray(gesture_data["features"][:min_len]),
+        TARGET_TIMESTEPS,
+        GESTURE_FEAT_DIM,
     )
-    audio_feat = (
-        np.zeros((min_len, TARGET_TIMESTEPS, AUDIO_FEAT_DIM), dtype=np.float32)
-        if audio_data is None
-        else normalize_audio_modality(audio_data[:min_len])
-    )
-    text_feat = (
-        np.zeros((min_len, TARGET_TIMESTEPS, TEXT_FEAT_DIM), dtype=np.float32)
-        if text_data is None
-        else normalize_dense_modality(
-            np.asarray(text_data["features"][:min_len]), TARGET_TIMESTEPS, TEXT_FEAT_DIM
-        )
+    audio_feat = normalize_audio_modality(audio_data[:min_len])
+    text_feat = normalize_dense_modality(
+        np.asarray(text_data["features"][:min_len]),
+        TARGET_TIMESTEPS,
+        TEXT_FEAT_DIM,
     )
 
     scene_type = infer_scene_type(video_name)
@@ -578,17 +665,34 @@ def load_aligned_video(
 
     labels = labels[valid_mask].astype(np.int64)
     approx_timestamps = approx_timestamps[valid_mask]
-    if "scene" in raw_missing:
-        scene_feat = np.zeros((len(approx_timestamps), SCENE_FEAT_DIM), dtype=np.float32)
+
+    # A declared missing Scene modality must not trigger image loading or a
+    # ViT backbone.  Construct the correctly shaped zero tensor directly.
+    # Scene targets are retained as supervision; only the Scene input is
+    # removed from the model.
+    if "scene" in set(MISSING_MODALITIES):
+        scene_feat = np.zeros(
+            (len(approx_timestamps), SCENE_FEAT_DIM),
+            dtype=np.float32,
+        )
         scene_record = {
-            "scene_source": "missing_raw_modality",
             "avi_path": None,
-            "sample_count": int(len(approx_timestamps)),
-            "failed_scene_frames": 0,
-            "example_timestamps": [str(value) for value in approx_timestamps[:5].tolist()],
+            "example_timestamps": [
+                str(item) for item in approx_timestamps[:3]
+            ],
+            "source": "missing_modality_zero",
         }
+        print(
+            f"[raw-missing] {video_name}: scene is declared missing; "
+            "skip image/ViT loading and use zeros"
+        )
     else:
-        scene_feat, scene_record = load_real_scene_features(video_name, approx_timestamps, scene_cache)
+        scene_feat, scene_record = load_real_scene_features(
+            video_name,
+            approx_timestamps,
+            scene_cache,
+        )
+
     features = {
         "imu": imu_feat[valid_mask],
         "gesture": gesture_feat[valid_mask],
@@ -1495,18 +1599,34 @@ def main() -> None:
     val_accs: List[float] = []
 
     print("[step] start training")
+    optimizer_training_seconds = 0.0
+    validation_seconds = 0.0
+    epochs_completed = 0
+    synchronize_device()
+    training_loop_start = time.perf_counter()
+
     for epoch in range(1, EPOCHS + 1):
+        synchronize_device()
+        train_epoch_start = time.perf_counter()
         train_loss, train_acc = train_one_epoch(
             model,
             train_loader,
             criterion,
             optimizer,
         )
+        synchronize_device()
+        optimizer_training_seconds += time.perf_counter() - train_epoch_start
+
+        synchronize_device()
+        validation_start = time.perf_counter()
         val_loss, val_acc, _, _ = evaluate(
             model,
             val_loader,
             criterion,
         )
+        synchronize_device()
+        validation_seconds += time.perf_counter() - validation_start
+        epochs_completed = epoch
 
         train_losses.append(train_loss)
         val_losses.append(val_loss)
@@ -1548,6 +1668,39 @@ def main() -> None:
                 print(f"[early_stop] no validation improvement for {PATIENCE} epochs")
                 break
 
+    synchronize_device()
+    training_loop_seconds = time.perf_counter() - training_loop_start
+    train_sample_count = int(len(y_train))
+    sample_exposures = int(train_sample_count * epochs_completed)
+    avg_training_seconds_per_sample = safe_divide(
+        optimizer_training_seconds,
+        sample_exposures,
+    )
+    training_timing = {
+        "optimizer_training_seconds": float(optimizer_training_seconds),
+        "validation_seconds": float(validation_seconds),
+        "training_loop_seconds": float(training_loop_seconds),
+        "epochs_completed": int(epochs_completed),
+        "train_sample_count": train_sample_count,
+        "sample_exposures": sample_exposures,
+        "avg_training_seconds_per_sample": avg_training_seconds_per_sample,
+        "avg_training_seconds_per_sample_exposure": avg_training_seconds_per_sample,
+        "cumulative_training_seconds_per_unique_sample": safe_divide(
+            optimizer_training_seconds,
+            train_sample_count,
+        ),
+        "avg_training_seconds_per_sample_definition": (
+            "optimizer_training_seconds / (train_sample_count * epochs_completed)"
+        ),
+    }
+    print(
+        "[timing] "
+        f"optimizer_train={optimizer_training_seconds:.3f}s "
+        f"validation={validation_seconds:.3f}s "
+        f"loop={training_loop_seconds:.3f}s "
+        f"avg_train_per_sample={avg_training_seconds_per_sample:.8f}s"
+    )
+
     if not checkpoint_path.exists():
         raise RuntimeError("Training finished without saving a checkpoint.")
 
@@ -1587,9 +1740,9 @@ def main() -> None:
             )
 
         metrics = {
+            "timing": training_timing,
             "config": {
                 "random_seed": RANDOM_SEED,
-                "missing_modalities": list(MISSING_MODALITIES),
                 "batch_size": BATCH_SIZE,
                 "epochs": EPOCHS,
                 "patience": PATIENCE,
@@ -1764,9 +1917,9 @@ def main() -> None:
         json.dump(modality_contribution, file, indent=2, ensure_ascii=False)
 
     metrics = {
+        "timing": training_timing,
         "config": {
             "random_seed": RANDOM_SEED,
-            "missing_modalities": list(MISSING_MODALITIES),
             "batch_size": BATCH_SIZE,
             "epochs": EPOCHS,
             "patience": PATIENCE,
