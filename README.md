@@ -92,6 +92,18 @@ joint logits = intent logits + scene logits
 
 该方法不在输入层拼接两种手势特征，而是让几何分支负责动作意图，让原 MediaPipe-cropped CLIP 分支提供场景上下文。它是针对显式 Scene 缺失的扩展方法，主方法仍为单模型 Hand Geometry。
 
+### Teaser 可视化
+
+![Teaser](docs/figures/teaser_full_mockup_with_title.png)
+
+Teaser 使用 fisheye 交互画面、MediaPipe 手部骨架叠加图和中间矢量架构图组成。中间架构图概括了从原始 AR 交互片段到多模态特征提取、Anchor/Residual 融合、Perceiver-style latent fusion 以及 intent/scene/joint prediction 的完整路径。对应矢量源图保存在：
+
+```text
+docs/figures/teaser_architecture.svg
+docs/figures/teaser_architecture.pdf
+docs/figures/teaser_architecture.png
+```
+
 ## 实验结果
 
 ### 主结果
@@ -185,6 +197,7 @@ code/
   run_missing_experiments.py             # 模态缺失实验
   run_noise_experiments.py               # 噪声实验
   run_gesture_geometry_suite.py          # hand geometry 一键实验
+  run_hand_geometry_window_ablation.py   # hand geometry 时间窗口消融
   run_gesture_fusion_suite.py            # CLIP + geometry 拼接实验
   summarize_robustness_results.py        # 鲁棒性结果汇总与可视化
   visualize_method_comparison.py         # 方法主结果、定位与泛化可视化
@@ -196,7 +209,16 @@ code/
     mfcc.py
     imu.py
 
+tools/
+  draw_teaser_architecture.py            # teaser 架构图与 mockup 生成
+  plot_hand_geometry_window_ablation.py  # 时间窗口消融可视化
+
 docs/figures/
+  teaser_full_mockup_with_title.png
+  teaser_full_mockup.png
+  teaser_architecture.svg
+  teaser_architecture.pdf
+  teaser_architecture.png
   hand_geometry_robustness_main.png
   hand_geometry_robustness_missing.png
   hand_geometry_robustness_noise.png
@@ -206,6 +228,7 @@ docs/figures/
   method_positioning.png
   factorized_generalization.png
   hand_geometry_ablation.png
+  hand_geometry_window_ablation.png
 ```
 
 ## 复现实验
@@ -326,6 +349,22 @@ Full raw workflow 从原始数据重新执行 timestamp、MediaPipe-cropped CLIP
 | delta_accel | 拼接一阶与二阶差分 | 0.9825 | 0.9839 | 0.9987 |
 
 结果显示，当前数据集上 wrist-relative landmarks 已经包含主要动作判别信息；meta 和显式距离组并非不可或缺，去掉 meta 反而略有提升。直接拼接时序差分会明显降低准确率，说明在小样本且文本锚点较强的设置下，高维差分特征可能引入噪声，简单速度扩展不如稳定的归一化关键点几何。
+
+### Hand Geometry 时间窗口消融
+
+![Hand Geometry 时间窗口消融](docs/figures/hand_geometry_window_ablation.png)
+
+为检查手部几何特征对采样帧数和时间窗口长度的敏感性，额外重跑了 5 组 MediaPipe Hand Geometry 提取与训练：
+
+| 设置 | seq_len | half_window_ms | window_ms | joint_acc | intent_acc | scene_acc |
+|---|---:|---:|---:|---:|---:|---:|
+| seq5_win500 | 5 | 500 | 1000 | **0.9866** | **0.9866** | 1.0000 |
+| seq10_win500 | 10 | 500 | 1000 | 0.9825 | 0.9825 | 1.0000 |
+| seq10_win750 | 10 | 750 | 1500 | 0.9852 | **0.9866** | 0.9987 |
+| seq10_win1000 | 10 | 1000 | 2000 | 0.9852 | 0.9865 | 0.9987 |
+| seq20_win750 | 20 | 750 | 1500 | 0.9852 | 0.9852 | 1.0000 |
+
+结果表明，Hand Geometry 对时间窗口选择较稳定，主任务准确率集中在 `0.9825-0.9866`。较短的 `seq5_win500` 略高，但差距很小，因此更适合作为“时间窗口鲁棒性”证据，而不是强调单一窗口配置显著最优。
 
 ### Hand Geometry 鲁棒性实验
 

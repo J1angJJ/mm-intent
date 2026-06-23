@@ -47,6 +47,7 @@ logs/
 tmp/
 temp/
 .tmp/
+.tmp_review/
 .cache/
 
 # Raw video folders copied to the server separately with scp
@@ -88,6 +89,18 @@ memory.local/
 scratch/
 transcripts/
 sessions/
+
+# Local paper drafting/build artifacts. Source drafts under private/ are already ignored.
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.toc
+*.out
+paper_teaser_candidates/
+teaser_assets/
 
 # VLA/world-model generated artifacts. Keep scripts tracked, outputs local/transferred.
 vla_world_model_lab/artifacts/
