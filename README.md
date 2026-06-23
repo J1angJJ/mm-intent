@@ -44,6 +44,20 @@ office, museum
 
 特征统一对齐到检测出的交互片段，每个片段使用固定长度时序窗口。数据集和模型缓存体积较大，默认不进入 git；仓库主要保留代码、轻量图表和复现实验入口。
 
+### 数据集划分
+
+课程要求使用用户 A/B 作为训练数据、用户 C 作为测试数据。本项目沿用这一被试划分口径：训练与验证样本来自用户 A/B 的交互视频，测试集来自用户 C 的独立交互视频。训练阶段再从用户 A/B 样本中按固定随机种子划分验证集，因此测试集不参与早停和模型选择。
+
+当前主实验使用 39 个主交互视频，场景包括 `office` 和 `museum`，每个场景包含 6 类意图。特征对齐后样本规模为：
+
+| 划分 | 来源 | 样本数 | 用途 |
+|---|---|---:|---|
+| train | 用户 A/B | 997 | 模型参数训练 |
+| val | 用户 A/B 内部划分 | 250 | early stopping / checkpoint selection |
+| test | 用户 C | 744 | 最终报告指标 |
+
+此外，泛化检查中额外跑过多随机种子和按采集日期整批留出实验，用来确认主结果不只依赖默认 seed 或单一固定测试划分。主表中的默认测试集结果仍按上述用户 C 测试集口径汇报。
+
 ## 方法概览
 
 ### Given Baseline
@@ -232,6 +246,20 @@ docs/figures/
 ```
 
 ## 复现实验
+
+### 端到端口径说明
+
+本项目为了同时满足课程“端到端入口”和全量实验可复现需求，保留了三种端到端口径，报告和 README 中的结果需要按协议区分：
+
+| 口径 | 入口 | 是否重提原始特征 | 主要用途 |
+|---|---|---|---|
+| workflow cached E2E | `code/train.py` | 默认复用已有缓存；可用 `--extract-features` 自动补齐缺失特征 | 正式训练/测试入口，记录模型训练与测试耗时 |
+| batch E2E | `code/batch_end_to_end.py` | 默认复用缓存；加 `--raw-hand-geometry` 可对当前 batch 从 fisheye 视频现算 hand geometry | 快速证明单 batch 从数据读取到训练/测试 forward 的闭环 |
+| full raw E2E | 手动串起 timestamp、gesture、MFCC、ASR、IMU、Hand Geometry、train/test | 是，从原始视频和 IMU 重新生成全部特征 | 证明完整原始流程可跑通，并估计全流程墙钟时间 |
+
+因此，`workflow cached E2E` 的平均样本训练/测试时间主要反映融合模型吞吐；`batch raw Hand Geometry` 的时间反映当前 batch 从视频现算 MediaPipe hand geometry 的代价；`full raw E2E` 的 2:01:30 墙钟时间反映从原始数据重建全套特征再训练测试的工程成本。这三个数值不能直接相加或混作同一个平均耗时。
+
+同理，精度对比也必须按协议比较：cached features 下比较 cached baseline 与 cached Hand Geometry；full raw E2E 下比较同一批重新提取特征得到的 full raw baseline 与 full raw Hand Geometry。不要拿 full raw Ours 去和 cached baseline 直接比较。
 
 ### Hand Geometry 主实验
 
