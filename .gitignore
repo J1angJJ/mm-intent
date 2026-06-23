@@ -102,6 +102,10 @@ sessions/
 paper_teaser_candidates/
 teaser_assets/
 
+# Server-side private transfer and backup folders
+backups/
+private_teaser_assets/
+
 # VLA/world-model generated artifacts. Keep scripts tracked, outputs local/transferred.
 vla_world_model_lab/artifacts/
 
