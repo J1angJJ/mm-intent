@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Iterable
 
 
 PROJECT_ROOT = Path(
@@ -37,6 +38,23 @@ SENTENCE_MODEL_NAME_OR_PATH = os.getenv(
     "MM_INTENT_SENTENCE_MODEL",
     str(PROJECT_ROOT / "models" / "all-MiniLM-L6-v2"),
 )
+
+
+def selected_video_names(default_names: Iterable[str]) -> list[str]:
+    """Apply the optional per-run video filter used by raw inference benchmarks."""
+    requested = {
+        item.strip()
+        for item in os.getenv("MM_INTENT_VIDEO_NAMES", "").replace(";", ",").split(",")
+        if item.strip()
+    }
+    names = list(default_names)
+    if not requested:
+        return names
+    selected = [name for name in names if name in requested]
+    missing = requested - set(selected)
+    if missing:
+        raise ValueError(f"Unknown/unavailable video names: {sorted(missing)}")
+    return selected
 
 
 def configure_hf_cache() -> None:

@@ -16,7 +16,7 @@ CODE_DIR = ROOT / "code"
 if str(CODE_DIR) not in sys.path:
     sys.path.append(str(CODE_DIR))
 
-from project_paths import FISHEYE_DIR, PROCESSED_DATA_DIR, PROJECT_ROOT
+from project_paths import FISHEYE_DIR, PROCESSED_DATA_DIR, PROJECT_ROOT, selected_video_names
 
 
 SEQ_LEN = 10
@@ -212,7 +212,8 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     detector_kind, detector = create_landmark_detector(Path(args.task_model))
     mapping = load_avi_to_mp4_map()
-    items = list(mapping.items())
+    selected = set(selected_video_names(mapping.values()))
+    items = [(avi, mp4) for avi, mp4 in mapping.items() if mp4 in selected]
     if args.limit > 0:
         items = items[: args.limit]
 

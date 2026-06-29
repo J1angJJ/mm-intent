@@ -27,7 +27,9 @@ configure_hf_cache()
 ROOT_DIR = DATASET_DIR.parent
 DATASET_VIDEO_DIR = FISHEYE_DIR
 LOCAL_VIT_PATH = Path(VIT_MODEL_NAME_OR_PATH)
-REAL_SCENE_CACHE_DIR = DATASET_DIR / "scene_cache_real_vit"
+REAL_SCENE_CACHE_DIR = Path(
+    os.getenv("MM_INTENT_SCENE_CACHE_DIR", DATASET_DIR / "scene_cache_real_vit")
+).resolve()
 SCENE_FEAT_DIM = 768
 
 AVI_TO_MP4_MAP = {

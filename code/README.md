@@ -18,6 +18,10 @@
 - `test.py`
   - 测试结果入口封装：读取训练输出目录中的 `metrics.json` 和分类报告，打印关键测试指标。
   - 若 `metrics.json` 中包含 `runtime` 字段，会同时打印 `train_avg_seconds_per_sample` 和 `test_avg_seconds_per_sample`。
+- `raw_test_inference.py`
+  - 最新正式推理计时入口：加载既有 Hand Geometry checkpoint，仅对用户 C 从原始数据重新提取全部实际使用的模态特征，再输出分类标签。
+  - 每次要求一个不存在的新运行目录，Scene 与其他测试特征均写入该隔离目录，从机制上禁止复用旧测试缓存。
+  - 输出 `raw_inference_timing.json` 和 `predictions.csv`；正式推理时间使用 `raw_inference_seconds_per_sample`，而不是缓存特征下的 forward 时间。
 - `run_missing_experiments.py`
   - 生成或执行单模态缺失、双模态缺失实验命令。
 - `run_noise_experiments.py`
@@ -34,7 +38,7 @@
 运行时间字段说明：
 
 - `runtime.train_avg_seconds_per_sample`：训练阶段平均每个样本耗时，只统计训练 batch 的 forward、backward 和 optimizer step。
-- `runtime.test_avg_seconds_per_sample`：测试阶段平均每个样本耗时，只统计最终测试集 evaluate/forward。
+- `runtime.test_avg_seconds_per_sample`：测试阶段平均每个样本耗时，只统计最终测试集 evaluate/forward；不满足“raw test data 到标签输出”的最新推理时间要求。
 - `runtime.train_total_seconds` / `runtime.test_total_seconds`：对应阶段总耗时。
 
 batch 级端到端示例：
@@ -45,6 +49,13 @@ python code/batch_end_to_end.py \
   --hand-geometry \
   --batch-size 32 \
   --output-dir outputs/batch_e2e_hand_geometry
+```
+
+正式 raw 测试推理计时：
+
+```bash
+python code/raw_test_inference.py \
+  --checkpoint-dir outputs/feature_suite/hand_geometry/main
 ```
 
 ### 2. 特征提取代码，位于feature_extraction文件夹

@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
-from project_paths import HOLOLENS_DIR, PROCESSED_DATA_DIR
+from project_paths import HOLOLENS_DIR, PROCESSED_DATA_DIR, selected_video_names
 
 # ============================
 # 1. 路径配置
@@ -159,7 +159,10 @@ if __name__ == "__main__":
     print(f"🚀 [本地模式] 开始生成黄金时间戳...")
     print(f"🚀 [毫秒精度模式] 开始处理...")
     
-    for video_name, label in VIDEO_LABELS.items():
+    video_names = selected_video_names(VIDEO_LABELS)
+    print(f"🎯 本次选择视频: {len(video_names)}/{len(VIDEO_LABELS)}")
+    for video_name in video_names:
+        label = VIDEO_LABELS[video_name]
         video_path = os.path.join(VIDEO_DIR, video_name)
         if not os.path.exists(video_path): continue
             

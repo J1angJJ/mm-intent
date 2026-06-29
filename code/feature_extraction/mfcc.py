@@ -10,7 +10,7 @@ from tqdm import tqdm
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
-from project_paths import HOLOLENS_DIR, PROCESSED_DATA_DIR
+from project_paths import HOLOLENS_DIR, PROCESSED_DATA_DIR, selected_video_names
 
 # ============================
 # 1. 配置 (适配 3.0 架构)
@@ -150,17 +150,18 @@ def extract_mfcc_39d(wav_path, metadata_path, video_start_dt):
 # 4. 主流程 (使用 VIDEO_NAMES)
 # ============================
 if __name__ == "__main__":
-    print(f"准备处理 {len(VIDEO_NAMES)} 个视频的音频特征...")
+    video_names = selected_video_names(VIDEO_NAMES)
+    print(f"准备处理 {len(video_names)} 个视频的音频特征...")
     print(f"读取 metadata 路径: {DATA_DIR}")
     print(f"输出音频特征路径: {SAVE_DATA_DIR}")
     
     # 检查 VIDEO_NAMES 是否为空
-    if not VIDEO_NAMES:
+    if not video_names:
         print("⚠️ VIDEO_NAMES 列表为空，请添加要处理的视频")
         exit()
 
     # 遍历 VIDEO_NAMES 中的每个视频
-    for video_name in VIDEO_NAMES:
+    for video_name in video_names:
         # 从视频名提取基础名称（去掉.mp4后缀）
         mp4_base = os.path.splitext(video_name)[0]
         

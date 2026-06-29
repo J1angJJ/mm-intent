@@ -13,7 +13,14 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
-from project_paths import CLIP_MODEL_NAME_OR_PATH, FISHEYE_DIR, PROCESSED_DATA_DIR, PROJECT_ROOT, configure_hf_cache
+from project_paths import (
+    CLIP_MODEL_NAME_OR_PATH,
+    FISHEYE_DIR,
+    PROCESSED_DATA_DIR,
+    PROJECT_ROOT,
+    configure_hf_cache,
+    selected_video_names,
+)
 
 configure_hf_cache()
 
@@ -246,7 +253,10 @@ def get_avi_sync_ms(avi_path, utc_target):
 
 # ==================== 4. 主执行流 ====================
 if __name__ == "__main__":
-    for avi_name, mp4_name in AVI_TO_MP4_MAP.items():
+    selected = set(selected_video_names(AVI_TO_MP4_MAP.values()))
+    items = [(avi, mp4) for avi, mp4 in AVI_TO_MP4_MAP.items() if mp4 in selected]
+    print(f"🎯 本次选择视频: {len(items)}/{len(AVI_TO_MP4_MAP)}")
+    for avi_name, mp4_name in items:
         mp4_base = os.path.splitext(mp4_name)[0]
         input_npy_path = os.path.join(INPUT_DATA_DIR, f"features_timestamp_{mp4_base}.npy")
         # 确保路径拼接正确

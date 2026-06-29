@@ -17,6 +17,7 @@ from project_paths import (
     PROCESSED_DATA_DIR,
     SENTENCE_MODEL_NAME_OR_PATH,
     configure_hf_cache,
+    selected_video_names,
 )
 
 configure_hf_cache()
@@ -177,11 +178,12 @@ def transcribe_and_embed(wav_path, time_ranges, whisper_model, st_model):
 # 4. 主流程
 # ============================
 if __name__ == "__main__":
+    video_names = selected_video_names(VIDEO_NAMES)
     # ===== 修改：直接使用 VIDEO_NAMES 列表 =====
-    print(f"准备处理 {len(VIDEO_NAMES)} 个视频...")
+    print(f"准备处理 {len(video_names)} 个视频...")
     
     # 检查 VIDEO_NAMES 是否为空
-    if not VIDEO_NAMES:
+    if not video_names:
         print("⚠️ VIDEO_NAMES 列表为空，请添加要处理的视频")
         exit()
 
@@ -191,7 +193,7 @@ if __name__ == "__main__":
     st_model = SentenceTransformer(st_source)
 
     # 遍历 VIDEO_NAMES 中的每个视频
-    for video_name in VIDEO_NAMES:
+    for video_name in video_names:
         name_base = os.path.splitext(video_name)[0]
         
         # 构建对应的 metadata 文件路径
