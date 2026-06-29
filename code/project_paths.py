@@ -11,7 +11,6 @@ PROJECT_ROOT = Path(
 DATASET_DIR = Path(os.getenv("MM_INTENT_DATASET_DIR", PROJECT_ROOT / "dataset")).resolve()
 FISHEYE_DIR = Path(os.getenv("MM_INTENT_FISHEYE_DIR", DATASET_DIR / "fisheye")).resolve()
 HOLOLENS_DIR = Path(os.getenv("MM_INTENT_HOLOLENS_DIR", DATASET_DIR / "HoloLens")).resolve()
-DATA_PROCESS_MODEL_DIR = DATASET_DIR / "AR_Data_Process3.0" / "models"
 
 PROCESSED_DATA_DIR = Path(
     os.getenv("MM_INTENT_PROCESSED_DATA_DIR", DATASET_DIR / "AR_Data_Process3.0" / "data")
@@ -31,12 +30,12 @@ VIT_MODEL_NAME_OR_PATH = os.getenv(
 
 CLIP_MODEL_NAME_OR_PATH = os.getenv(
     "MM_INTENT_CLIP_MODEL",
-    str(DATA_PROCESS_MODEL_DIR / "clip_teacher_model"),
+    str(PROJECT_ROOT / "models" / "clip_teacher_model"),
 )
 
 SENTENCE_MODEL_NAME_OR_PATH = os.getenv(
     "MM_INTENT_SENTENCE_MODEL",
-    str(DATA_PROCESS_MODEL_DIR / "all-MiniLM-L6-v2"),
+    str(PROJECT_ROOT / "models" / "all-MiniLM-L6-v2"),
 )
 
 

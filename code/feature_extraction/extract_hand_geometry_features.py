@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import argparse
 import ast
+import hashlib
 import json
 import os
+import shutil
 import sys
+import urllib.request
+from collections.abc import Sequence
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import cv2
-import mediapipe as mp
 import numpy as np
-from PIL import Image
 from tqdm import tqdm
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,12 +21,20 @@ if str(CODE_DIR) not in sys.path:
     sys.path.append(str(CODE_DIR))
 
 from project_paths import FISHEYE_DIR, PROCESSED_DATA_DIR, PROJECT_ROOT
-from raw_data_utils import add_image_pixel_noise, select_video_names
+from video_selection import filter_avi_mp4_items
 
 
 SEQ_LEN = 10
 HALF_WINDOW_MS = 750
 FEATURE_DIM = 96
+DEFAULT_TASK_MODEL_URLS = (
+    "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+    "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task",
+)
+EXPECTED_TASK_MODEL_SHA256 = {
+    DEFAULT_TASK_MODEL_URLS[0]: "fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1",
+}
+MIN_TASK_MODEL_BYTES = 1024 * 1024
 
 
 def load_avi_to_mp4_map() -> dict[str, str]:
@@ -39,7 +48,66 @@ def load_avi_to_mp4_map() -> dict[str, str]:
     raise RuntimeError("Cannot find AVI_TO_MP4_MAP in strong_gesture2.0.py")
 
 
-def create_landmark_detector(task_path: Path):
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def download_task_model(task_path: Path, model_urls: Sequence[str]) -> Path | None:
+    task_path = task_path.resolve()
+    task_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = task_path.with_suffix(task_path.suffix + ".download")
+    errors: list[str] = []
+    for url in model_urls:
+        try:
+            print(f"[hand] downloading MediaPipe hand landmarker: {url}")
+            with urllib.request.urlopen(url, timeout=60) as response, tmp_path.open("wb") as file:
+                shutil.copyfileobj(response, file)
+            size = tmp_path.stat().st_size
+            if size < MIN_TASK_MODEL_BYTES:
+                raise RuntimeError(f"downloaded model is too small: {size} bytes")
+            sha256 = file_sha256(tmp_path)
+            expected_sha256 = EXPECTED_TASK_MODEL_SHA256.get(url)
+            if expected_sha256 and sha256.lower() != expected_sha256:
+                raise RuntimeError(f"unexpected model sha256: {sha256}")
+            tmp_path.replace(task_path)
+            print(f"[hand] saved MediaPipe hand landmarker: {task_path} ({size} bytes, sha256={sha256})")
+            return task_path
+        except Exception as exc:
+            errors.append(f"{url}: {exc}")
+            if tmp_path.exists():
+                tmp_path.unlink()
+    print("[warn] MediaPipe Tasks model download failed:")
+    for error in errors:
+        print(f"       {error}")
+    return None
+
+
+def legacy_hands_module():
+    import mediapipe as mp
+
+    try:
+        return mp.solutions.hands
+    except AttributeError:
+        try:
+            from mediapipe.python.solutions import hands as mp_hands
+
+            return mp_hands
+        except ModuleNotFoundError:
+            return None
+
+
+def create_landmark_detector(task_path: Path, *, auto_download: bool = True, model_urls: Sequence[str] = DEFAULT_TASK_MODEL_URLS):
+    import mediapipe as mp
+
+    task_path = task_path.resolve()
+    if not task_path.exists() and auto_download:
+        download_task_model(task_path, model_urls)
+
+    task_error: Exception | None = None
     if task_path.exists():
         try:
             options = mp.tasks.vision.HandLandmarkerOptions(
@@ -51,9 +119,25 @@ def create_landmark_detector(task_path: Path):
             print(f"[hand] MediaPipe Tasks: {task_path}")
             return "tasks", mp.tasks.vision.HandLandmarker.create_from_options(options)
         except Exception as exc:
+            task_error = exc
             print(f"[warn] MediaPipe Tasks failed, fallback to legacy: {exc}")
+    else:
+        print(f"[warn] MediaPipe Tasks model not found: {task_path}")
+
+    mp_hands = legacy_hands_module()
+    if mp_hands is None:
+        details = [
+            "No MediaPipe hand detector is available.",
+            f"Tasks model path does not exist or cannot be used: {task_path}.",
+            "The installed mediapipe package does not expose legacy Hands via mp.solutions or mediapipe.python.solutions.",
+        ]
+        if task_error is not None:
+            details.append(f"Tasks error: {task_error}")
+        details.append("Fix by allowing the default model download, or pass --task-model path/to/hand_landmarker.task.")
+        raise RuntimeError(" ".join(details))
+
     try:
-        hands = mp.solutions.hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.3)
+        hands = mp_hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.3)
         print("[hand] MediaPipe legacy Hands")
         return "legacy", hands
     except Exception as exc:
@@ -61,6 +145,9 @@ def create_landmark_detector(task_path: Path):
 
 
 def detect_landmarks(detector_kind: str, detector, frame_bgr: np.ndarray):
+    import cv2
+    import mediapipe as mp
+
     frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
     if detector_kind == "tasks":
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
@@ -70,6 +157,15 @@ def detect_landmarks(detector_kind: str, detector, frame_bgr: np.ndarray):
     if not result.multi_hand_landmarks:
         return []
     return [hand.landmark for hand in result.multi_hand_landmarks]
+
+
+def close_landmark_detector(detector) -> None:
+    close = getattr(detector, "close", None)
+    if callable(close):
+        try:
+            close()
+        except Exception as exc:
+            print(f"[warn] MediaPipe detector close failed: {exc}")
 
 
 def hand_feature_from_landmarks(hand_landmarks) -> np.ndarray:
@@ -130,6 +226,8 @@ def hand_feature_from_landmarks(hand_landmarks) -> np.ndarray:
 
 
 def get_avi_sync_ms(avi_path: Path, utc_target: datetime) -> float | None:
+    import cv2
+
     avi_fn = avi_path.name
     time_part = avi_fn.split("_")[1] + "_" + avi_fn.split("_")[2].split(".")[0]
     avi_utc_start = datetime.strptime(time_part, "%Y%m%d_%H%M%S%f") - timedelta(hours=8)
@@ -147,6 +245,8 @@ def get_avi_sync_ms(avi_path: Path, utc_target: datetime) -> float | None:
 
 
 def extract_sequence(video_path: Path, center_ms: float, detector_kind: str, detector) -> np.ndarray | None:
+    import cv2
+
     cap = cv2.VideoCapture(str(video_path))
     fps = cap.get(cv2.CAP_PROP_FPS)
     frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -166,13 +266,6 @@ def extract_sequence(video_path: Path, center_ms: float, detector_kind: str, det
         ok, frame = cap.read()
         if not ok:
             break
-        image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        image = add_image_pixel_noise(
-            image,
-            "gesture",
-            f"{video_path.name}|{float(msec):.3f}",
-        )
-        frame = cv2.cvtColor(np.asarray(image), cv2.COLOR_RGB2BGR)
         landmarks = detect_landmarks(detector_kind, detector, frame)
         features.append(hand_feature_from_landmarks(landmarks))
     cap.release()
@@ -182,66 +275,86 @@ def extract_sequence(video_path: Path, center_ms: float, detector_kind: str, det
 
 
 def main() -> None:
+    global HALF_WINDOW_MS, SEQ_LEN
+
     parser = argparse.ArgumentParser(description="Extract MediaPipe hand geometry time-series features.")
     parser.add_argument("--output-dir", default=str(PROCESSED_DATA_DIR / "hand_geometry_features"))
     parser.add_argument(
         "--task-model",
         default=os.getenv("MM_INTENT_HAND_LANDMARKER_TASK", str(PROJECT_ROOT / "models" / "hand_landmarker.task")),
     )
+    parser.add_argument(
+        "--no-download-task-model",
+        action="store_true",
+        help="Do not download the default MediaPipe Tasks hand model when --task-model is missing.",
+    )
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument("--seq-len", type=int, default=SEQ_LEN)
+    parser.add_argument("--half-window-ms", type=int, default=HALF_WINDOW_MS)
     args = parser.parse_args()
+    if args.seq_len <= 0:
+        raise SystemExit("--seq-len must be positive.")
+    if args.half_window_ms <= 0:
+        raise SystemExit("--half-window-ms must be positive.")
+    SEQ_LEN = args.seq_len
+    HALF_WINDOW_MS = args.half_window_ms
 
     output_dir = Path(args.output_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    detector_kind, detector = create_landmark_detector(Path(args.task_model))
+    detector_kind, detector = create_landmark_detector(Path(args.task_model), auto_download=not args.no_download_task_model)
     mapping = load_avi_to_mp4_map()
-    selected_names = set(select_video_names(mapping.values()))
-    items = [(avi_name, mp4_name) for avi_name, mp4_name in mapping.items() if mp4_name in selected_names]
+    items = filter_avi_mp4_items(mapping.items())
     if args.limit > 0:
         items = items[: args.limit]
 
-    print(f"[hand-geometry] videos={len(items)} output={output_dir} dim={FEATURE_DIM}")
-    for avi_name, mp4_name in items:
-        mp4_base = Path(mp4_name).stem
-        metadata_path = PROCESSED_DATA_DIR / f"metadata_strong_gesture_{mp4_base}.npy"
-        video_path = FISHEYE_DIR / avi_name
-        if not metadata_path.exists() or not video_path.exists():
-            print(f"[skip] missing metadata/video: {mp4_name}")
-            continue
-        metadata = np.load(metadata_path, allow_pickle=True).item()
-        timestamps = metadata["approx_timestamps"]
-        labels = metadata["labels"]
-        valid_feats, valid_labels, valid_tss = [], [], []
-        debug: dict[str, object] = {}
-        print(f"\n>>> {avi_name} -> {mp4_name}")
-        for index, ts_str in tqdm(list(enumerate(timestamps)), total=len(timestamps)):
-            try:
-                utc_dt = datetime.fromisoformat(str(ts_str).replace("Z", "+00:00")).replace(tzinfo=None)
-                center_ms = get_avi_sync_ms(video_path, utc_dt)
-                if center_ms is None:
-                    continue
-                sequence = extract_sequence(video_path, center_ms, detector_kind, detector)
-                if sequence is None:
-                    continue
-                valid_feats.append(sequence)
-                valid_labels.append(labels[index])
-                valid_tss.append(ts_str)
-                debug[str(len(valid_feats) - 1)] = {"source_index": index, "timestamp": str(ts_str), "center_ms": center_ms}
-            except Exception as exc:
-                print(f"[warn] segment {index}: {exc}")
-        if not valid_feats:
-            print("[warn] no valid hand geometry sequences")
-            continue
-        payload = {
-            "features": np.stack(valid_feats, axis=0).astype(np.float32),
-            "labels": np.asarray(valid_labels),
-            "video_names": np.asarray([mp4_name] * len(valid_labels)),
-            "approx_timestamps": valid_tss,
-        }
-        np.save(output_dir / f"strong_gesture_features_{mp4_base}.npy", payload)
-        with (output_dir / f"hand_geometry_debug_{mp4_base}.json").open("w", encoding="utf-8") as file:
-            json.dump(debug, file, indent=2, ensure_ascii=False)
-        print(f"[saved] {mp4_name} {payload['features'].shape}")
+    print(
+        f"[hand-geometry] videos={len(items)} output={output_dir} "
+        f"seq_len={SEQ_LEN} half_window_ms={HALF_WINDOW_MS} dim={FEATURE_DIM}"
+    )
+    try:
+        for avi_name, mp4_name in items:
+            mp4_base = Path(mp4_name).stem
+            metadata_path = PROCESSED_DATA_DIR / f"metadata_strong_gesture_{mp4_base}.npy"
+            video_path = FISHEYE_DIR / avi_name
+            if not metadata_path.exists() or not video_path.exists():
+                print(f"[skip] missing metadata/video: {mp4_name}")
+                continue
+            metadata = np.load(metadata_path, allow_pickle=True).item()
+            timestamps = metadata["approx_timestamps"]
+            labels = metadata["labels"]
+            valid_feats, valid_labels, valid_tss = [], [], []
+            debug: dict[str, object] = {}
+            print(f"\n>>> {avi_name} -> {mp4_name}")
+            for index, ts_str in tqdm(list(enumerate(timestamps)), total=len(timestamps)):
+                try:
+                    utc_dt = datetime.fromisoformat(str(ts_str).replace("Z", "+00:00")).replace(tzinfo=None)
+                    center_ms = get_avi_sync_ms(video_path, utc_dt)
+                    if center_ms is None:
+                        continue
+                    sequence = extract_sequence(video_path, center_ms, detector_kind, detector)
+                    if sequence is None:
+                        continue
+                    valid_feats.append(sequence)
+                    valid_labels.append(labels[index])
+                    valid_tss.append(ts_str)
+                    debug[str(len(valid_feats) - 1)] = {"source_index": index, "timestamp": str(ts_str), "center_ms": center_ms}
+                except Exception as exc:
+                    print(f"[warn] segment {index}: {exc}")
+            if not valid_feats:
+                print("[warn] no valid hand geometry sequences")
+                continue
+            payload = {
+                "features": np.stack(valid_feats, axis=0).astype(np.float32),
+                "labels": np.asarray(valid_labels),
+                "video_names": np.asarray([mp4_name] * len(valid_labels)),
+                "approx_timestamps": valid_tss,
+            }
+            np.save(output_dir / f"strong_gesture_features_{mp4_base}.npy", payload)
+            with (output_dir / f"hand_geometry_debug_{mp4_base}.json").open("w", encoding="utf-8") as file:
+                json.dump(debug, file, indent=2, ensure_ascii=False)
+            print(f"[saved] {mp4_name} {payload['features'].shape}")
+    finally:
+        close_landmark_detector(detector)
 
 
 if __name__ == "__main__":

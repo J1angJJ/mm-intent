@@ -21,7 +21,6 @@ from project_paths import (
     VIT_MODEL_NAME_OR_PATH,
     configure_hf_cache,
 )
-from raw_data_utils import add_image_pixel_noise
 
 configure_hf_cache()
 
@@ -195,8 +194,6 @@ class RealSceneFeatureCache:
             return feature
 
         image = read_real_scene_frame(video_name, timestamp_value)
-        if image is not None:
-            image = add_image_pixel_noise(image, "scene", cache_key)
         feature = encode_scene_pil_image(image) if image is not None else np.zeros(SCENE_FEAT_DIM, dtype=np.float32)
         np.save(cache_path, feature)
         self.memory_cache[cache_key] = feature

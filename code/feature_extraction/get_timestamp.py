@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from project_paths import HOLOLENS_DIR, PROCESSED_DATA_DIR
-from raw_data_utils import select_video_names
+from video_selection import parse_requested_video_names
 
 # ============================
 # 1. 路径配置
@@ -160,9 +160,10 @@ if __name__ == "__main__":
     print(f"🚀 [本地模式] 开始生成黄金时间戳...")
     print(f"🚀 [毫秒精度模式] 开始处理...")
     
-    selected_names = select_video_names(VIDEO_LABELS)
-    print(f"🎯 本次处理视频: {len(selected_names)}/{len(VIDEO_LABELS)}")
-    for video_name in selected_names:
+    selected_video_names = parse_requested_video_names(VIDEO_LABELS.keys())
+    print(f"馃幆 MM_INTENT_VIDEO_NAMES selected {len(selected_video_names)} video(s)")
+
+    for video_name in selected_video_names:
         label = VIDEO_LABELS[video_name]
         video_path = os.path.join(VIDEO_DIR, video_name)
         if not os.path.exists(video_path): continue

@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from project_paths import DATASET_DIR, PROCESSED_DATA_DIR
-from raw_data_utils import add_imu_channel_noise, select_video_names
+from video_selection import parse_requested_video_names
 
 # ============================
 # 1. 配置 (适配 3.0 架构)
@@ -82,7 +82,7 @@ VIDEO_NAMES = [
     "interaction_20260306_085830.mp4",
     "interaction_20260306_090441.mp4",
 ]
-VIDEO_NAMES = select_video_names(VIDEO_NAMES)
+VIDEO_NAMES = parse_requested_video_names(VIDEO_NAMES)
 
 # ============================
 # 2. 预处理函数 (完全保留原动力学逻辑)
@@ -96,14 +96,6 @@ def load_and_preprocess_imu(imu_csv_path):
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
     # df["timestamp_sec"] = df["timestamp"].view(np.int64) / 1e9 # 纳秒转秒
     df["timestamp_sec"] = df["timestamp"].astype(np.int64) / 1e9
-
-    raw_columns = ["pos_x", "pos_y", "pos_z", "rot_x", "rot_y", "rot_z", "rot_w"]
-    df.loc[:, raw_columns] = add_imu_channel_noise(df[raw_columns].to_numpy(), raw_columns)
-    quaternion_columns = ["rot_x", "rot_y", "rot_z", "rot_w"]
-    quaternion = df[quaternion_columns].to_numpy(dtype=np.float64)
-    quaternion_norm = np.linalg.norm(quaternion, axis=1, keepdims=True)
-    quaternion_norm[quaternion_norm < 1e-12] = 1.0
-    df.loc[:, quaternion_columns] = quaternion / quaternion_norm
 
     # 四元数转欧拉角 (roll, pitch, yaw)
     r = R.from_quat(df[["rot_x", "rot_y", "rot_z", "rot_w"]].values)

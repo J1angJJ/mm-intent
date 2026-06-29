@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import os
 import pickle
-import time
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
@@ -18,16 +17,7 @@ from torch.utils.data import DataLoader, Dataset
 
 import baseline_real_scene as base
 from project_paths import MODEL_OUTPUT_ROOT
-
-
-def synchronize_device() -> None:
-    """Synchronize CUDA so wall-clock measurements include queued GPU work."""
-    if DEVICE.type == "cuda":
-        torch.cuda.synchronize(DEVICE)
-
-
-def safe_divide(numerator: float, denominator: int) -> float:
-    return float(numerator / denominator) if denominator > 0 else 0.0
+from runtime_timing import timed_block, timing_payload
 
 
 # ============================================================
@@ -1234,30 +1224,22 @@ def main() -> None:
     train_margin_losses: List[float] = []
     train_missing_distill_losses: List[float] = []
     train_supcon_losses: List[float] = []
+    train_timing_seconds = 0.0
+    train_samples_seen = 0
 
     print("[step] start training")
-    optimizer_training_seconds = 0.0
-    validation_seconds = 0.0
-    epochs_completed = 0
-    synchronize_device()
-    training_loop_start = time.perf_counter()
-
     for epoch in range(1, EPOCHS + 1):
-        synchronize_device()
-        train_epoch_start = time.perf_counter()
-        train_loss, train_acc, train_parts = train_one_epoch(
-            model,
-            train_loader,
-            joint_criterion,
-            intent_criterion,
-            scene_criterion,
-            optimizer,
-        )
-        synchronize_device()
-        optimizer_training_seconds += time.perf_counter() - train_epoch_start
-
-        synchronize_device()
-        validation_start = time.perf_counter()
+        with timed_block() as train_timer:
+            train_loss, train_acc, train_parts = train_one_epoch(
+                model,
+                train_loader,
+                joint_criterion,
+                intent_criterion,
+                scene_criterion,
+                optimizer,
+            )
+        train_timing_seconds += train_timer["seconds"]
+        train_samples_seen += len(y_train_joint)
         val_metrics = evaluate(
             model,
             val_loader,
@@ -1265,9 +1247,6 @@ def main() -> None:
             intent_criterion,
             scene_criterion,
         )
-        synchronize_device()
-        validation_seconds += time.perf_counter() - validation_start
-        epochs_completed = epoch
 
         train_losses.append(float(train_loss))
         val_losses.append(float(val_metrics["loss"]))
@@ -1300,7 +1279,8 @@ def main() -> None:
             f"train_loss={train_loss:.4f} train_acc={train_acc:.4f} | "
             f"val_loss={val_metrics['loss']:.4f} val_joint={val_metrics['joint_acc']:.4f} "
             f"val_intent={val_metrics['intent_acc']:.4f} val_scene={val_metrics['scene_acc']:.4f} "
-            f"select={selection_score:.4f}"
+            f"select={selection_score:.4f} | "
+            f"train_time/sample={train_timer['seconds'] / max(len(y_train_joint), 1):.6f}s"
         )
 
         improved = (selection_score > best_selection_score) or (
@@ -1321,12 +1301,6 @@ def main() -> None:
                     "depth": DEPTH,
                     "num_heads": NUM_HEADS,
                     "dropout": DROPOUT,
-                    "min_gate": MIN_GATE,
-                    "imu_max_scale": IMU_MAX_SCALE,
-                    "audio_max_scale": AUDIO_MAX_SCALE,
-                    "intent_refine_scale": INTENT_REFINE_SCALE,
-                    "gesture_logit_blend": GESTURE_LOGIT_BLEND,
-                    "fallback_max_gate": FALLBACK_MAX_GATE,
                     "best_epoch": best_epoch,
                     "best_val_acc": best_val_acc,
                     "best_val_loss": best_val_loss,
@@ -1339,39 +1313,6 @@ def main() -> None:
             if patience_counter >= PATIENCE:
                 print(f"[early_stop] no validation improvement for {PATIENCE} epochs")
                 break
-
-    synchronize_device()
-    training_loop_seconds = time.perf_counter() - training_loop_start
-    train_sample_count = int(len(y_train_joint))
-    sample_exposures = int(train_sample_count * epochs_completed)
-    avg_training_seconds_per_sample = safe_divide(
-        optimizer_training_seconds,
-        sample_exposures,
-    )
-    training_timing = {
-        "optimizer_training_seconds": float(optimizer_training_seconds),
-        "validation_seconds": float(validation_seconds),
-        "training_loop_seconds": float(training_loop_seconds),
-        "epochs_completed": int(epochs_completed),
-        "train_sample_count": train_sample_count,
-        "sample_exposures": sample_exposures,
-        "avg_training_seconds_per_sample": avg_training_seconds_per_sample,
-        "avg_training_seconds_per_sample_exposure": avg_training_seconds_per_sample,
-        "cumulative_training_seconds_per_unique_sample": safe_divide(
-            optimizer_training_seconds,
-            train_sample_count,
-        ),
-        "avg_training_seconds_per_sample_definition": (
-            "optimizer_training_seconds / (train_sample_count * epochs_completed)"
-        ),
-    }
-    print(
-        "[timing] "
-        f"optimizer_train={optimizer_training_seconds:.3f}s "
-        f"validation={validation_seconds:.3f}s "
-        f"loop={training_loop_seconds:.3f}s "
-        f"avg_train_per_sample={avg_training_seconds_per_sample:.8f}s"
-    )
 
     if not checkpoint_path.exists():
         raise RuntimeError("Training finished without saving a checkpoint.")
@@ -1434,7 +1375,6 @@ def main() -> None:
             json.dump(gate_summary, file, indent=2, ensure_ascii=False)
 
         metrics = {
-            "timing": training_timing,
             "config": {
                 "random_seed": base.RANDOM_SEED,
                 "batch_size": BATCH_SIZE,
@@ -1531,6 +1471,12 @@ def main() -> None:
                 "val_gesture_intent_loss_only": float(val_metrics["gesture_intent_loss"]),
                 "val_fallback_loss_only": float(val_metrics["fallback_loss"]),
             },
+            "runtime": timing_payload(
+                train_timing_seconds,
+                train_samples_seen,
+                None,
+                0,
+            ),
             "class_names": joint_class_names,
             "intent_class_names": intent_class_names,
             "scene_class_names": scene_class_names,
@@ -1585,13 +1531,16 @@ def main() -> None:
         print(f"  gate_summary    {gate_summary_path}")
         return
 
-    test_metrics = evaluate(
-        model,
-        test_loader,
-        joint_criterion,
-        intent_criterion,
-        scene_criterion,
-    )
+    with timed_block() as test_timer:
+        test_metrics = evaluate(
+            model,
+            test_loader,
+            joint_criterion,
+            intent_criterion,
+            scene_criterion,
+        )
+    print(f"[timing] train_avg_seconds_per_sample={train_timing_seconds / max(train_samples_seen, 1):.6f}")
+    print(f"[timing] test_avg_seconds_per_sample={test_timer['seconds'] / max(len(y_test_joint), 1):.6f}")
 
     report = classification_report(
         test_metrics["joint_true"],
@@ -1722,7 +1671,6 @@ def main() -> None:
         json.dump(modality_contribution, file, indent=2, ensure_ascii=False)
 
     metrics = {
-        "timing": training_timing,
         "config": {
             "random_seed": base.RANDOM_SEED,
             "batch_size": BATCH_SIZE,
@@ -1835,6 +1783,12 @@ def main() -> None:
             "test_gesture_intent_loss_only": float(test_metrics["gesture_intent_loss"]),
             "test_fallback_loss_only": float(test_metrics["fallback_loss"]),
         },
+        "runtime": timing_payload(
+            train_timing_seconds,
+            train_samples_seen,
+            test_timer["seconds"],
+            len(y_test_joint),
+        ),
         "class_names": joint_class_names,
         "intent_class_names": intent_class_names,
         "scene_class_names": scene_class_names,
