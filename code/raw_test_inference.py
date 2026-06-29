@@ -275,6 +275,10 @@ def main() -> None:
 
     os.environ["MM_INTENT_PROCESSED_DATA_DIR"] = str(processed_dir)
     os.environ["MM_INTENT_SCENE_CACHE_DIR"] = str(scene_cache_dir)
+    os.environ["MM_INTENT_GESTURE_FEATURE_DIR"] = str(processed_dir / "hand_geometry_features")
+    os.environ["MM_INTENT_AUDIO_FEATURE_DIR"] = str(processed_dir / "audio_features")
+    os.environ["MM_INTENT_TEXT_FEATURE_DIR"] = str(processed_dir / "text_features")
+    os.environ["MM_INTENT_IMU_FEATURE_DIR"] = str(processed_dir / "imu_features")
     os.environ["MM_INTENT_GESTURE_FEAT_DIM"] = "96"
     configure_checkpoint_environment(checkpoint_dir)
 
