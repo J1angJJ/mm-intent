@@ -365,7 +365,7 @@ python code/batch_end_to_end.py \
 | batch cached Hand Geometry | 32 | 0.015178 s | 0.000806 s | cache load 0.000480 s/sample |
 | batch raw Hand Geometry | 32 | 0.013226 s | 0.000729 s | raw geometry 1.758790 s/sample |
 | full raw workflow | train seen 10967 / test 744 | 0.000436 s | 0.000126 s | total wall time 2:01:30 |
-| raw test inference | 用户 C fresh raw test | 训练时间不变 | **待服务器运行新入口回填** | 禁止调用既有测试特征缓存 |
+| raw test inference | 用户 C fresh raw test 744 | 训练时间不变 | **2.196286 s** | total 1634.037 s；禁止调用既有测试特征缓存 |
 
 对应完整模态测试结果：
 
@@ -375,6 +375,10 @@ python code/batch_end_to_end.py \
 | Ours: Hand Geometry full raw E2E | 0.9852 | 0.9866 | 0.9987 | 7 |
 
 需要注意：上表前三行均为历史诊断口径。按照最新要求，正式“推理时间”只能使用最后一行 raw test inference 的结果；训练时间仍沿用原统计，无需修改。
+
+Fresh raw test inference 于 `2026-06-29` 在全新隔离目录中完成。13 个用户 C 原始视频先经 VAD 得到 762 个候选片段，Hand Geometry 的边界/有效性检查过滤 18 个，最终得到与正式测试集一致的 744 个样本和 744 个新生成的 ViT Scene 特征。完整流程耗时 `1634.037 s`（`27 min 14.04 s`），平均 `2.196286 s/sample`，吞吐约 `0.4553 sample/s`。其中 Hand Geometry 提取耗时 `1375.221 s`，占 `84.16%`；Scene ViT 与分类阶段耗时 `136.613 s`，占 `8.36%`；Whisper + SentenceTransformer 耗时 `76.143 s`，占 `4.66%`。分类器自身 forward 仅为 `0.000258 s/sample`，说明正式推理成本主要来自 raw feature extraction。
+
+该 fresh raw 测试得到 `joint_acc=0.9933`、`intent_acc=0.9933`、`scene_acc=1.0000`，即 744 个样本中正确 739 个。相比固定缓存主结果 `0.9946` 少正确 1 个样本，新增错误为 `museum_brush -> museum_menu`，表明重提特征只引入了轻微预测漂移。
 
 Full raw workflow 从原始数据重新执行 timestamp、MediaPipe-cropped CLIP gesture、MFCC、ASR、IMU、Hand Geometry 与训练测试。总墙钟时间为 2:01:30，其中主要耗时来自 `strong_gesture2.0.py` 约 60 分钟和 `extract_hand_geometry_features.py` 约 55 分钟。
 
